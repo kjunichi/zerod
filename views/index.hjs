@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>{{ title }}</title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+
+<body>
+  <h1>{{ title }}</h1>
+  <p>Welcome to {{ title }}</p>
+  <script src="./javascripts/three.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const names = [];
+    const px = {},
+      py = {},
+      pz = {};
+    for (let i = 0; i < 10; i++) {
+      names[i] = i;
+      px[names[i]]=0;
+      py[names[i]]=0;
+      pz[names[i]]=0;
+    }
+    console.dir(names);
+    const socket = io();
+    
+    socket.on('pos', (data) => {
+      px[data.name] = data.x;
+      py[data.name] = data.y;
+      pz[data.name] = data.z;
+    });
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    var geometry = new THREE.BoxGeometry(1, 1, 1);
+    var material = new THREE.MeshBasicMaterial({
+      color: 0x00ff00
+    });
+    const cube={};
+    for(name of names) {
+      cube[name] = new THREE.Mesh(geometry, material);
+      scene.add(cube[name]);
+    }
+
+    camera.position.z = 50;
+
+    const anim = () => {
+      for (let name of names) {
+        cube[name].position.x = px[name];
+        cube[name].rotation.y = py[name];
+        const obj ={};
+        obj.name = name;
+        socket.emit('getPos', obj);
+      }
+      renderer.render(scene, camera);
+      requestAnimationFrame(anim);
+    }
+
+    anim();
+  </script>
+</body>
+
+</html>

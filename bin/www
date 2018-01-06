@@ -1,0 +1,134 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+const app = require('../app');
+const debug = require('debug')('socketiospeed:server');
+const http = require('http');
+const server = require('http').Server(app);
+const io = require('socket.io')(server);
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3003');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+//var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string' ?
+    'Pipe ' + port :
+    'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string' ?
+    'pipe ' + addr :
+    'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+
+const px = {},
+py = {},
+pz = {};
+const names = [];
+for (let i = 0; i < 100; i++) {
+  names[i] = i;
+  px[names[i]]=0;
+  py[names[i]]=0;
+  pz[names[i]]=0;
+}
+
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  socket.on('getPos', (data) => {
+    //console.dir(data);
+    const obj = {};
+    obj.name = data.name;
+    obj.x = px[data.name];
+    obj.y = py[data.name];
+    obj.z = pz[data.name];
+    io.emit('pos', obj);
+    if(data.name == 99) {
+      console.log(obj);
+    }
+    //console.log(obj);
+  });
+});
+
+setInterval(() => {
+  for (let name of names) {
+    px[name] += Math.random();
+    pz[name] = Math.random()*5;
+    py[name] += 0.1 + Math.random();
+    if (py[name] > 100) {
+      py[name] = 0;
+    }
+    if (px[name] > 100) {
+      px[name] = -200;
+    }
+  }
+}, 10);
