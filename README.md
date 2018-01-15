@@ -12,7 +12,7 @@ Another terminal
 open http://localhost:3000/
 ```
 
-if you are usign Windows.
+if you are using Windows.
 
 ```bash
 start http://localhost:3000/
