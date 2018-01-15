@@ -9,11 +9,11 @@ npm start
 Another terminal
 
 ```bash
-open http://localhost:3000/
+open http://localhost:3003/
 ```
 
 if you are using Windows.
 
 ```bash
-start http://localhost:3000/
+start http://localhost:3003/
 ```
