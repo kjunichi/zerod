@@ -12,122 +12,534 @@ const io = require('socket.io')(server);
 const fs = require('fs');
 
 //console.log(fs.readFileSync("./public/javascripts/ammo.js",{encoding:'utf8'}));
-eval(fs.readFileSync("./public/javascripts/ammo.js",{encoding:'utf8'}));
+eval(fs.readFileSync("./public/javascripts/ammo.js", {
+  encoding: 'utf8'
+}));
 //console.log(Ammo);
 //const Ammo = require('../public/javascripts/ammo.js');
-Ammo().then((Ammo)=> {
-  // Adapted from HelloWorld.cpp, Copyright (c) 2003-2007 Erwin Coumans  http://continuousphysics.com/Bullet/
+const terrainWidth = 512;
+const terrainDepth = 512;
+const controls = {};
+const actions = {};
+const carlist = [
+  "fordgt90",
+  "koenigsegg",
+  "laferrari",
+  "zonda",
+  "car1",
+  "car2",
+  "car3",
+  "car4",
+  "car5"
+];
+for (let car of carlist) {
+    controls[car] = {};
+    controls[car].moveForward = false;
+    controls[car].moveBackward = false;
+    controls[car].moveLeft = false;
+    controls[car].moveRight = false;
+}
+const carData = {
+    "fordgt90": {
+        "body_url": "obj/fordBody.json",
+        "wheel_url": "",
+        "engineForce": 600
+    },
+    "koenigsegg": {
+        "body_url": "obj/koenigsegg/koenigsegg_body.json",
+        "wheel_url": "",
+        "rotation": Math.PI,
+        "bodyOffsetHeight": 0,
+        "scale": 1.5,
+        "massVehicle": 1100,
+        "wheelAxisPositionBack": -1.7,
+        "wheelWidthBack": .0,
+        "wheelAxisFrontPosition": 1.5,
+        "wheelWidthFront": .0,
+        "wheelRadiusBack": .4,
 
-  const main = ()=> {
-    //console.log(Ammo);
-    const collisionConfiguration  = new Ammo.btDefaultCollisionConfiguration(),
-        dispatcher              = new Ammo.btCollisionDispatcher(collisionConfiguration),
-        overlappingPairCache    = new Ammo.btDbvtBroadphase(),
-        solver                  = new Ammo.btSequentialImpulseConstraintSolver(),
-        dynamicsWorld           = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-    dynamicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
-
-    const groundShape     = new Ammo.btBoxShape(new Ammo.btVector3(50, 50, 50)),
-        bodies          = [],
-        groundTransform = new Ammo.btTransform();
-
-    groundTransform.setIdentity();
-    groundTransform.setOrigin(new Ammo.btVector3(0, -56, 0));
-
-    (()=> {
-      var mass          = 0,
-          isDynamic     = (mass !== 0),
-          localInertia  = new Ammo.btVector3(0, 0, 0);
-
-      if (isDynamic)
-        groundShape.calculateLocalInertia(mass, localInertia);
-
-      var myMotionState = new Ammo.btDefaultMotionState(groundTransform),
-          rbInfo        = new Ammo.btRigidBodyConstructionInfo(mass, myMotionState, groundShape, localInertia),
-          body          = new Ammo.btRigidBody(rbInfo);
-
-      dynamicsWorld.addRigidBody(body);
-      bodies.push(body);
-    })();
-
-
-    (() =>{
-      var colShape        = new Ammo.btSphereShape(1),
-          startTransform  = new Ammo.btTransform();
-      
-      startTransform.setIdentity();
-
-      var mass          = 1,
-          isDynamic     = (mass !== 0),
-          localInertia  = new Ammo.btVector3(0, 0, 0);
-      
-      if (isDynamic)
-        colShape.calculateLocalInertia(mass,localInertia);
-
-      startTransform.setOrigin(new Ammo.btVector3(2, 10, 0));
-    
-      var myMotionState = new Ammo.btDefaultMotionState(startTransform),
-          rbInfo        = new Ammo.btRigidBodyConstructionInfo(mass, myMotionState, colShape, localInertia),
-          body          = new Ammo.btRigidBody(rbInfo);
-
-      dynamicsWorld.addRigidBody(body);
-      bodies.push(body);
-    })();
-
-    const trans = new Ammo.btTransform(); // taking this out of the loop below us reduces the leaking
-
-    for (let i = 0; i < 135; i++) {
-      dynamicsWorld.stepSimulation(1/60, 10);
-      
-      bodies.forEach((body)=> {
-        if (body.getMotionState()) {
-          body.getMotionState().getWorldTransform(trans);
-          console.log("world pos = " + [trans.getOrigin().x().toFixed(2), trans.getOrigin().y().toFixed(2), trans.getOrigin().z().toFixed(2)]);
-        }
-      });
+        "engineForce": 600
+    },
+    "camaro": {
+        "body_url": "obj/camaro/camaro_body.json",
+        "wheel_url": "",
+        "rotation": 0,
+        "bodyOffsetHeight": 0.5,
+        "scale": 1.0,
+        "massVehicle": 1700,
+        "wheelAxisPositionBack": -1.7,
+        "wheelWidthBack": -0.1,
+        "wheelAxisFrontPosition": 1.9,
+        "wheelWidthFront": -0.1,
+        "wheelRadiusBack": 0.4,
+        "engineForce": 600
+    },
+    "zonda": {
+        "body_url": "obj/zonda/zonda_body.json",
+        "wheel_url": "",
+        "bodyOffsetHeight": 0.5,
+        "rotation": 0,
+        "scale": 1.0,
+        "massVehicle": 1200,
+        "wheelAxisPositionBack": -2.05,
+        "wheelWidthBack": 0.1,
+        "wheelAxisFrontPosition": 1.7,
+        "wheelWidthFront": 0.1,
+        "wheelRadiusBack": 0.4,
+        "engineForce": 600
+    },
+    "laferrari": {
+        "body_url": "obj/laferrari/laferrari_body.json",
+        "wheel_url": "",
+        "bodyOffsetHeight": 0,
+        "rotation": Math.PI,
+        "scale": 1.5,
+        "massVehicle": 1200,
+        "wheelAxisPositionBack": -2.05,
+        "wheelWidthBack": 0.1,
+        "wheelAxisFrontPosition": 1.7,
+        "wheelWidthFront": 0.1,
+        "wheelRadiusBack": 0.4,
+        "engineForce": 600
     }
+};
 
-    // Delete objects we created through |new|. We just do a few of them here, but you should do them all if you are not shutting down ammo.js
-    // we'll free the objects in reversed order as they were created via 'new' to avoid the 'dead' object links
-    Ammo.destroy(dynamicsWorld);
-    Ammo.destroy(solver);
-    Ammo.destroy(overlappingPairCache);
-    Ammo.destroy(dispatcher);
-    Ammo.destroy(collisionConfiguration);
+Ammo().then((Ammo) => {
+  let heightData = null;
+  let ammoHeightData = null;
+  const terrainHalfWidth = terrainWidth / 2;
+  const terrainHalfDepth = terrainDepth / 2;
+  const terrainMaxHeight = 18;
+  const terrainMinHeight = -10;
+  const terrainWidthExtents = 5000;
+  const terrainDepthExtents = 5000;
+  
+  // - Global variables -
+  const DISABLE_DEACTIVATION = 4;
+  const TRANSFORM_AUX = new Ammo.btTransform();
+  const ZERO_QUATERNION = [0, 0, 0, 1];
 
-    console.log('ok.')
+  // Graphics variables
+  let container, stats, speedometer;
+  let camera, scene, renderer;
+  let camera2, renderer2;
+  var terrainMesh, texture;
+  //const clock = new THREE.Clock();
+  let materialDynamic, materialStatic, materialInteractive;
+
+  // Physics variables
+  let collisionConfiguration;
+  var dispatcher;
+  var broadphase;
+  var solver;
+  var physicsWorld;
+
+  const syncList = [];
+  let time = 0;
+  const objectTimePeriod = 3;
+  const timeNextSpawn = time + objectTimePeriod;
+  const maxNumObjects = 30;
+  let gCarname = "car4";
+
+  // Keybord actions
+
+  const keysActions = {
+    "KeyW": 'acceleration',
+    "KeyS": 'braking',
+    "KeyA": 'left',
+    "KeyD": 'right'
+  };
+  const carKind = {
+    "car1": "koenigsegg",
+    "car2": "koenigsegg",
+    "car3": "camaro",
+    "car4": "zonda",
+    "car5": "laferrari"
+  };
+  const cars = ["car1", "car2", "car3", "car4", "car5"];
+  for (let car of cars) {
+    actions[car] = {};
   }
+  //console.dir(actions);
+  const campos = new Ammo.btVector3(0, 1.4, -6);
 
-  main();
+  // - Functions -
+
+  const initGraphics = () => {
+  };
+
+  const initPhysics = () => {
+
+    // Physics configuration
+    collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
+    dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
+    broadphase = new Ammo.btDbvtBroadphase();
+    solver = new Ammo.btSequentialImpulseConstraintSolver();
+    physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, broadphase, solver,
+      collisionConfiguration);
+    physicsWorld.setGravity(new Ammo.btVector3(0, -9.82, 0));
+  };
+
+  let saved_t = Date.now();
+  const tick = () => {
+    //requestAnimationFrame(tick);
+    setTimeout(tick,10);
+    //const dt = clock.getDelta();
+    const now = Date.now();
+    const dt = now - saved_t;
+    saved_t = now;
+    for (let syncItem of syncList) {
+      syncItem(dt);
+    }
+    physicsWorld.stepSimulation(dt, 10);
+    //controls.update(dt);
+    time += dt;
+  };
+
+  const keyup = (e) => {
+    if (keysActions[e.code]) {
+      actions[gCarname][keysActions[e.code]] = false;
+      //console.log(actions[gCarname])
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  };
+
+  const keydown = (e) => {
+    //console.log("e.code", e.code);
+    if (keysActions[e.code]) {
+      actions[gCarname][keysActions[e.code]] = true;
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  };
+
+  const createBox = (pos, quat, w, l, h, mass, friction) => {
+    //const material = mass > 0 ? materialDynamic : materialStatic;
+    const geometry = new Ammo.btBoxShape(new Ammo.btVector3(w * 0.5, l * 0.5, h * 0.5));
+
+    if (!mass) mass = 0;
+    if (!friction) friction = 1;
+
+    const transform = new Ammo.btTransform();
+    transform.setIdentity();
+    transform.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
+    transform.setRotation(new Ammo.btQuaternion(quat[0], quat[1], quat[2], quat[3]));
+    const motionState = new Ammo.btDefaultMotionState(transform);
+
+    const localInertia = new Ammo.btVector3(0, 0, 0);
+    geometry.calculateLocalInertia(mass, localInertia);
+
+    const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, geometry,
+      localInertia);
+    const body = new Ammo.btRigidBody(rbInfo);
+
+    body.setFriction(friction);
+    //body.setRestitution(.9);
+    //body.setDamping(0.2, 0.2);
+
+    physicsWorld.addRigidBody(body);
+
+    if (mass > 0) {
+      body.setActivationState(DISABLE_DEACTIVATION);
+      // Sync physics and graphics
+      const sync = (dt) => {
+        const ms = body.getMotionState();
+        if (ms) {
+          ms.getWorldTransform(TRANSFORM_AUX);
+          const p = TRANSFORM_AUX.getOrigin();
+          const q = TRANSFORM_AUX.getRotation();
+          //mesh.position.set(p.x(), p.y(), p.z());
+          //mesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
+        }
+      };
+      syncList.push(sync);
+    }
+  };
+
+  const createVehicle = (name, kind, pos, quat) => {
+    console.log(`createVehicle kind=${kind}`);
+    // Vehicle contants
+    const carname = name;
+    const carkind = kind;
+    const chassisWidth = 1.8;
+    const chassisHeight = 0.6;
+    const chassisLength = 4;
+    const massVehicle = carData[kind].massVehicle;
+
+    const wheelAxisPositionBack = carData[kind].wheelAxisPositionBack;
+    const wheelRadiusBack = carData[kind].wheelRadiusBack;
+    const wheelWidthBack = carData[kind].wheelWidthBack;
+    const wheelHalfTrackBack = 1.1;
+    const wheelAxisHeightBack = 0.3;
+
+    const wheelAxisFrontPosition = carData[kind].wheelAxisFrontPosition;
+    const wheelHalfTrackFront = 1;
+    const wheelAxisHeightFront = 0.3;
+    const wheelRadiusFront = 0.35;
+    const wheelWidthFront = carData[kind].wheelWidthFront;
+
+    const friction = 1000;
+    const suspensionStiffness = 20.0;
+    const suspensionDamping = 2.3;
+    const suspensionCompression = 4.4;
+    const suspensionRestLength = 0.6;
+    const rollInfluence = 0.0;
+
+    const steeringIncrement = 0.04;
+    const steeringClamp = 0.5;
+    const maxEngineForce = 8000;
+    const maxBreakingForce = 200;
+
+    // Chassis
+    const geometry = new Ammo.btBoxShape(new Ammo.btVector3(chassisWidth * 0.5, chassisHeight *
+      0.5,
+      chassisLength * 0.5));
+    const transform = new Ammo.btTransform();
+    transform.setIdentity();
+    transform.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
+    transform.setRotation(new Ammo.btQuaternion(quat[0], quat[1], quat[2], quat[3]));
+    const motionState = new Ammo.btDefaultMotionState(transform);
+    const localInertia = new Ammo.btVector3(0, 0, 0);
+    geometry.calculateLocalInertia(massVehicle, localInertia);
+    const body = new Ammo.btRigidBody(new Ammo.btRigidBodyConstructionInfo(massVehicle,
+      motionState, geometry, localInertia));
+    body.setActivationState(DISABLE_DEACTIVATION);
+    physicsWorld.addRigidBody(body);
+
+    // Raycast Vehicle
+    let engineForce = 0;
+    let vehicleSteering = 0;
+    let breakingForce = 0;
+    const tuning = new Ammo.btVehicleTuning();
+    const rayCaster = new Ammo.btDefaultVehicleRaycaster(physicsWorld);
+    const vehicle = new Ammo.btRaycastVehicle(tuning, body, rayCaster);
+    vehicle.setCoordinateSystem(0, 1, 2);
+    physicsWorld.addAction(vehicle);
+
+    // Wheels
+    const FRONT_LEFT = 0;
+    const FRONT_RIGHT = 1;
+    const BACK_LEFT = 2;
+    const BACK_RIGHT = 3;
+    const wheelMeshes = [];
+    const wheelDirectionCS0 = new Ammo.btVector3(0, -1, 0);
+    const wheelAxleCS = new Ammo.btVector3(-1, 0, 0);
+
+    const addWheel = (name, isFront, pos, radius, width, index) => {
+      const wheelInfo = vehicle.addWheel(
+        pos,
+        wheelDirectionCS0,
+        wheelAxleCS,
+        suspensionRestLength,
+        radius,
+        tuning,
+        isFront);
+
+      wheelInfo.set_m_suspensionStiffness(suspensionStiffness);
+      wheelInfo.set_m_wheelsDampingRelaxation(suspensionDamping);
+      wheelInfo.set_m_wheelsDampingCompression(suspensionCompression);
+      wheelInfo.set_m_frictionSlip(friction);
+      wheelInfo.set_m_rollInfluence(rollInfluence);
+    };
+
+    addWheel(name, true, new Ammo.btVector3(wheelHalfTrackFront, wheelAxisHeightFront,
+      wheelAxisFrontPosition), wheelRadiusFront, wheelWidthFront, FRONT_LEFT);
+    addWheel(name, true, new Ammo.btVector3(-wheelHalfTrackFront, wheelAxisHeightFront,
+      wheelAxisFrontPosition), wheelRadiusFront, wheelWidthFront, FRONT_RIGHT);
+    addWheel(name, false, new Ammo.btVector3(-wheelHalfTrackBack, wheelAxisHeightBack,
+      wheelAxisPositionBack), wheelRadiusBack, wheelWidthBack, BACK_LEFT);
+    addWheel(name, false, new Ammo.btVector3(wheelHalfTrackBack, wheelAxisHeightBack,
+      wheelAxisPositionBack), wheelRadiusBack, wheelWidthBack, BACK_RIGHT);
+
+    // Sync keybord actions and physics and graphics
+    const sync = (dt) => {
+      const speed = vehicle.getCurrentSpeedKmHour();
+      
+      breakingForce = 0;
+      engineForce = 0;
+
+      if (actions[carname].acceleration) {
+        if (speed < -1)
+          breakingForce = maxBreakingForce;
+        else engineForce = maxEngineForce;
+      }
+      if (actions[carname].braking) {
+        if (speed > 1)
+          breakingForce = maxBreakingForce;
+        else engineForce = -maxEngineForce / 2;
+      }
+      if (actions[carname].left) {
+        if (vehicleSteering < steeringClamp)
+          vehicleSteering += steeringIncrement;
+      } else {
+        if (actions[carname].right) {
+          if (vehicleSteering > -steeringClamp)
+            vehicleSteering -= steeringIncrement;
+        } else {
+          if (vehicleSteering < -steeringIncrement)
+            vehicleSteering += steeringIncrement;
+          else {
+            if (vehicleSteering > steeringIncrement)
+              vehicleSteering -= steeringIncrement;
+            else {
+              vehicleSteering = 0;
+            }
+          }
+        }
+      }
+
+      vehicle.applyEngineForce(engineForce, BACK_LEFT);
+      vehicle.applyEngineForce(engineForce, BACK_RIGHT);
+
+      vehicle.setBrake(breakingForce / 2, FRONT_LEFT);
+      vehicle.setBrake(breakingForce / 2, FRONT_RIGHT);
+      vehicle.setBrake(breakingForce, BACK_LEFT);
+      vehicle.setBrake(breakingForce, BACK_RIGHT);
+
+      vehicle.setSteeringValue(vehicleSteering, FRONT_LEFT);
+      vehicle.setSteeringValue(vehicleSteering, FRONT_RIGHT);
+
+
+      const n = vehicle.getNumWheels();
+      for (let i = 0; i < n; i++) {
+        vehicle.updateWheelTransform(i, true);
+        const tm = vehicle.getWheelTransformWS(i);
+        const p = tm.getOrigin();
+        const q = tm.getRotation();
+        //wheelMeshes[i].position.set(p.x(), p.y(), p.z());
+        //wheelMeshes[i].quaternion.set(q.x(), q.y(), q.z(), q.w());
+      }
+
+      const tm = vehicle.getChassisWorldTransform();
+      const p = tm.getOrigin();
+      const q = tm.getRotation();
+      //chassisMesh.position.set(p.x(), p.y(), p.z());
+      //chassisMesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
+    };
+    syncList.push(sync);
+  };
+
+  const createGround = () => {
+    // Create the terrain body
+    heightData = generateHeight(terrainWidth, terrainDepth, terrainMinHeight, terrainMaxHeight);
+    const scaleX = terrainWidthExtents / (terrainWidth - 1);
+    const scaleZ = terrainDepthExtents / (terrainDepth - 1);
+    
+    const groundShape = createTerrainShape(heightData);
+    const groundTransform = new Ammo.btTransform();
+    groundTransform.setIdentity();
+    // Shifts the terrain, since bullet re-centers it on its bounding box.
+    groundTransform.setOrigin(new Ammo.btVector3(0, (terrainMaxHeight + terrainMinHeight) / 2, 0));
+    const groundMass = 0;
+    const groundLocalInertia = new Ammo.btVector3(0, 0, 0);
+    const groundMotionState = new Ammo.btDefaultMotionState(groundTransform);
+    const groundBody = new Ammo.btRigidBody(new Ammo.btRigidBodyConstructionInfo(groundMass, groundMotionState, groundShape, groundLocalInertia));
+    physicsWorld.addRigidBody(groundBody);
+  };
+
+  const createObjects = () => {
+    //createBox(new Ammo.btVector3(0, -0.5, 0), ZERO_QUATERNION, 750, 1, 750, 0, 2);
+    createGround();
+
+    const quaternion = [0, 0, 0, 1];
+    //quaternion.setFromAxisAngle(new Ammo.btVector3(1, 0, 0), -Math.PI / 5);
+    createBox(new Ammo.btVector3(0, -1.5, 0), quaternion, 8, 4, 10, 0);
+
+    const size = 0.85;
+    const nw = 6;
+    const nh = 5;
+    for (let j = 0; j < nw; j++)
+      for (let i = 0; i < nh; i++)
+        createBox(new Ammo.btVector3(size * j - (size * (nw - 1)) / 2, size * i, 10),
+          ZERO_QUATERNION, size, size, size, 10);
+
+    createVehicle("car1", "koenigsegg", new Ammo.btVector3(0, 4, -2000), ZERO_QUATERNION);
+    createVehicle("car2", "koenigsegg", new Ammo.btVector3(0, 4, -4000), ZERO_QUATERNION);
+    createVehicle("car3", "camaro", new Ammo.btVector3(0, 8, 800), ZERO_QUATERNION);
+    createVehicle("car4", "zonda", new Ammo.btVector3(0, 14, -1300), ZERO_QUATERNION);
+    createVehicle("car5", "laferrari", new Ammo.btVector3(0, 14, -100), ZERO_QUATERNION);
+  };
+
+  const generateHeight = (width, depth, minHeight, maxHeight) => {
+    // Generates the height data (a sinus wave)
+    const size = width * depth;
+    const data = new Float32Array(size);
+    const hRange = maxHeight - minHeight;
+    const w2 = width / 2;
+    const d2 = depth / 2;
+    const phaseMult = 12;
+    let p = 0;
+    for (let j = 0; j < depth; j++) {
+      for (let i = 0; i < width; i++) {
+        var radius = Math.sqrt(
+          Math.pow((i - w2) / w2, 2.0) +
+          Math.pow((j - d2) / d2, 2.0));
+        const height = (Math.sin(radius * phaseMult) + 1) * 0.5 * hRange + minHeight;
+        data[p] = height;
+        p++;
+      }
+    }
+    return data;
+  };
+  const createTerrainShape = () => {
+    // This parameter is not really used, since we are using PHY_FLOAT height data type and hence it is ignored
+    const heightScale = 1;
+    // Up axis = 0 for X, 1 for Y, 2 for Z. Normally 1 = Y is used.
+    const upAxis = 1;
+    // hdt, height data type. "PHY_FLOAT" is used. Possible values are "PHY_FLOAT", "PHY_UCHAR", "PHY_SHORT"
+    const hdt = "PHY_FLOAT";
+    // Set this to your needs (inverts the triangles)
+    const flipQuadEdges = false;
+    // Creates height data buffer in Ammo heap
+    ammoHeightData = Ammo._malloc(4 * terrainWidth * terrainDepth);
+    // Copy the javascript height data array to the Ammo one.
+    let p = 0;
+    let p2 = 0;
+    for (let j = 0; j < terrainDepth; j++) {
+      for (let i = 0; i < terrainWidth; i++) {
+        // write 32-bit float data to memory
+        Ammo.HEAPF32[ammoHeightData + p2 >> 2] = heightData[p];
+        p++;
+        // 4 bytes/float
+        p2 += 4;
+      }
+    }
+    // Creates the heightfield physics shape
+    const heightFieldShape = new Ammo.btHeightfieldTerrainShape(
+      terrainWidth,
+      terrainDepth,
+      ammoHeightData,
+      heightScale,
+      terrainMinHeight,
+      terrainMaxHeight,
+      upAxis,
+      hdt,
+      flipQuadEdges
+    );
+    // Set horizontal scale
+    const scaleX = terrainWidthExtents / (terrainWidth - 1);
+    const scaleZ = terrainDepthExtents / (terrainDepth - 1);
+    heightFieldShape.setLocalScaling(new Ammo.btVector3(scaleX, 1, scaleZ));
+    heightFieldShape.setMargin(0.05);
+    return heightFieldShape;
+  };
+
+  // - Init -
+  initGraphics();
+  initPhysics();
+  createObjects();
+  tick();
 });
-
-/**
- * Get port from environment and store in Express.
- */
-
-var port = normalizePort(process.env.PORT || '3003');
-app.set('port', port);
-
-/**
- * Create HTTP server.
- */
-
-//var server = http.createServer(app);
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
 
 /**
  * Normalize a port into a number, string, or false.
  */
 
-function normalizePort(val) {
-  var port = parseInt(val, 10);
+const normalizePort = (val) => {
+  const port = parseInt(val, 10);
 
   if (isNaN(port)) {
     // named pipe
@@ -140,18 +552,25 @@ function normalizePort(val) {
   }
 
   return false;
-}
+};
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+const port = normalizePort(process.env.PORT || '3003');
+app.set('port', port);
 
 /**
  * Event listener for HTTP server "error" event.
  */
 
-function onError(error) {
+const onError = (error) => {
   if (error.syscall !== 'listen') {
     throw error;
   }
 
-  var bind = typeof port === 'string' ?
+  const bind = typeof port === 'string' ?
     'Pipe ' + port :
     'Port ' + port;
 
@@ -168,30 +587,38 @@ function onError(error) {
     default:
       throw error;
   }
-}
+};
 
 /**
  * Event listener for HTTP server "listening" event.
  */
 
-function onListening() {
-  var addr = server.address();
-  var bind = typeof addr === 'string' ?
+const onListening = () => {
+  const addr = server.address();
+  const bind = typeof addr === 'string' ?
     'pipe ' + addr :
     'port ' + addr.port;
   debug('Listening on ' + bind);
-}
+};
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
 
 const px = {},
-py = {},
-pz = {};
+  py = {},
+  pz = {};
 const names = [];
 
 for (let i = 0; i < 100; i++) {
   names[i] = i;
-  px[names[i]]=0;
-  py[names[i]]=0;
-  pz[names[i]]=0;
+  px[names[i]] = 0;
+  py[names[i]] = 0;
+  pz[names[i]] = 0;
 }
 
 io.on('connection', (socket) => {
@@ -204,7 +631,7 @@ io.on('connection', (socket) => {
     obj.y = py[data.name];
     obj.z = pz[data.name];
     io.emit('pos', obj);
-    if(data.name == 99) {
+    if (data.name == 99) {
       console.log(obj);
     }
     //console.log(obj);
@@ -214,7 +641,7 @@ io.on('connection', (socket) => {
 setInterval(() => {
   for (let name of names) {
     px[name] += Math.random();
-    pz[name] = Math.random()*5;
+    pz[name] = Math.random() * 5;
     py[name] += 0.1 + Math.random();
     if (py[name] > 100) {
       py[name] = 0;
