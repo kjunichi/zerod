@@ -143,455 +143,464 @@ const carload = (name, callback) => {
 let gCarname2 = "car3";
 
 const ammain = () => {
-    
-        let heightData = null;
-        let ammoHeightData = null;
-        const terrainHalfWidth = terrainWidth / 2;
-        const terrainHalfDepth = terrainDepth / 2;
-        const terrainMaxHeight = 18;
-        const terrainMinHeight = -10;
-        const terrainWidthExtents = 5000;
-        const terrainDepthExtents = 5000;
-        // Detects webgl
-        
 
-        // - Global variables -
-        const DISABLE_DEACTIVATION = 4;
-        const ZERO_QUATERNION = new THREE.Quaternion(0, 0, 0, 1);
+    let heightData = null;
+    let ammoHeightData = null;
+    const terrainHalfWidth = terrainWidth / 2;
+    const terrainHalfDepth = terrainDepth / 2;
+    const terrainMaxHeight = 18;
+    const terrainMinHeight = -10;
+    const terrainWidthExtents = 5000;
+    const terrainDepthExtents = 5000;
+    // Detects webgl
 
-        // Graphics variables
-        let container, stats, speedometer;
-        let camera, scene, renderer;
-        let camera2, renderer2;
-        var terrainMesh, texture;
-        const clock = new THREE.Clock();
-        let materialDynamic, materialStatic, materialInteractive;
 
-        // Physics variables
-        let collisionConfiguration;
-        var dispatcher;
-        var broadphase;
-        var solver;
-        var physicsWorld;
+    // - Global variables -
+    const DISABLE_DEACTIVATION = 4;
+    const ZERO_QUATERNION = new THREE.Quaternion(0, 0, 0, 1);
 
-        const syncList = [];
-        let time = 0;
-        const objectTimePeriod = 3;
-        const timeNextSpawn = time + objectTimePeriod;
-        const maxNumObjects = 30;
-        let gCarname = "car4";
+    // Graphics variables
+    let container, stats, speedometer;
+    let camera, scene, renderer;
+    let camera2, renderer2;
+    var terrainMesh, texture;
+    const clock = new THREE.Clock();
+    let materialDynamic, materialStatic, materialInteractive;
 
-        // Keybord actions
+    // Physics variables
+    let collisionConfiguration;
+    var dispatcher;
+    var broadphase;
+    var solver;
+    var physicsWorld;
 
-        const keysActions = {
-            "KeyW": 'acceleration',
-            "KeyS": 'braking',
-            "KeyA": 'left',
-            "KeyD": 'right'
-        };
-        const carKind = {
-            "car1": "koenigsegg",
-            "car2": "koenigsegg",
-            "car3": "camaro",
-            "car4": "zonda",
-            "car5": "laferrari"
-        };
-        const cars = ["car1", "car2", "car3", "car4","car5"];
-        for (let car of cars) {
-            actions[car] = {};
+    const syncList = [];
+    let time = 0;
+    const objectTimePeriod = 3;
+    const timeNextSpawn = time + objectTimePeriod;
+    const maxNumObjects = 30;
+    let gCarname = "car4";
+
+    // Keybord actions
+
+    const keysActions = {
+        "KeyW": 'acceleration',
+        "KeyS": 'braking',
+        "KeyA": 'left',
+        "KeyD": 'right'
+    };
+    const carKind = {
+        "car1": "koenigsegg",
+        "car2": "koenigsegg",
+        "car3": "camaro",
+        "car4": "zonda",
+        "car5": "laferrari"
+    };
+    const cars = ["car1", "car2", "car3", "car4", "car5"];
+    for (let car of cars) {
+        actions[car] = {};
+    }
+    //console.dir(actions);
+    const campos = new THREE.Vector3(0, 1.4, -6);
+
+    // - Functions -
+
+    const initGraphics = () => {
+
+        container = document.getElementById('container');
+        speedometer = document.getElementById('speedometer');
+
+        scene = new THREE.Scene();
+
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / (window.innerHeight / 2), 0.2,
+            2000);
+        camera2 = new THREE.PerspectiveCamera(60, window.innerWidth / (window.innerHeight / 2), 0.2,
+            2000);
+
+        renderer = new THREE.WebGLRenderer({
+            antialias: true
+        });
+        renderer.setClearColor(0xbfd1e5);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight / 2);
+
+        renderer2 = new THREE.WebGLRenderer({
+            antialias: true
+        });
+        renderer2.setClearColor(0xbfd1e5);
+        renderer2.setPixelRatio(window.devicePixelRatio);
+        renderer2.setSize(window.innerWidth, window.innerHeight / 2);
+
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(10, 10, 5);
+        scene.add(dirLight);
+
+        materialDynamic = new THREE.MeshPhongMaterial({
+            color: 0xfca400
+        });
+        materialStatic = new THREE.MeshPhongMaterial({
+            color: 0x999999
+        });
+        materialInteractive = new THREE.MeshPhongMaterial({
+            color: 0x990000
+        });
+
+        container.innerHTML = "";
+
+        container.appendChild(renderer.domElement);
+        container.appendChild(renderer2.domElement);
+
+        stats = new Stats();
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.top = '0px';
+        container.appendChild(stats.domElement);
+
+        window.addEventListener('resize', onWindowResize, false);
+        window.addEventListener('keydown', keydown);
+        window.addEventListener('keyup', keyup);
+    };
+
+    const onWindowResize = () => {
+        camera.aspect = window.innerWidth / (window.innerHeight / 2);
+        camera.updateProjectionMatrix();
+
+        camera2.aspect = window.innerWidth / (window.innerHeight / 2);
+        camera2.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, (window.innerHeight / 2));
+        renderer2.setSize(window.innerWidth, (window.innerHeight / 2));
+    };
+
+    const tick = () => {
+        requestAnimationFrame(tick);
+        const dt = clock.getDelta();
+        for (let syncItem of syncList) {
+            //syncItem(dt);
         }
-        //console.dir(actions);
-        const campos = new THREE.Vector3(0, 1.4, -6);
+        //physicsWorld.stepSimulation(dt, 10);
+        //controls.update(dt);
+        renderer.render(scene, camera);
+        renderer2.render(scene, camera2);
+        time += dt;
+        stats.update();
+    };
 
-        // - Functions -
+    const keyup = (e) => {
+        if (keysActions[e.code]) {
+            actions[gCarname][keysActions[e.code]] = false;
+            //console.log(actions[gCarname])
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    };
 
-        const initGraphics = () => {
+    const keydown = (e) => {
+        //console.log("e.code", e.code);
+        if (keysActions[e.code]) {
+            actions[gCarname][keysActions[e.code]] = true;
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    };
 
-            container = document.getElementById('container');
-            speedometer = document.getElementById('speedometer');
+    const createBox = (pos, quat, w, l, h, mass, friction) => {
+        const material = mass > 0 ? materialDynamic : materialStatic;
+        const shape = new THREE.BoxGeometry(w, l, h, 1, 1, 1);
 
-            scene = new THREE.Scene();
+        const mesh = new THREE.Mesh(shape, material);
+        mesh.position.copy(pos);
+        mesh.quaternion.copy(quat);
+        scene.add(mesh);
+    };
 
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / (window.innerHeight / 2), 0.2,
-                2000);
-            camera2 = new THREE.PerspectiveCamera(60, window.innerWidth / (window.innerHeight / 2), 0.2,
-                2000);
+    const createWheelMesh = (name, width, index) => {
+        console.log(`createWheelMesh width = ${width}`)
+        const wheel = new THREE.Mesh(wGeom[carKind[name]], wMat[carKind[name]]);
+        if (index == 1 || index == 2) {
+            wheel.rotation.y = Math.PI;
+            wheel.position.x = wheel.position.x + width;
+        } else {
+            wheel.position.x = wheel.position.x - width;
+        }
 
-            renderer = new THREE.WebGLRenderer({
-                antialias: true
-            });
-            renderer.setClearColor(0xbfd1e5);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight / 2);
+        wheel.scale.set(carData[carKind[name]].scale,
+            carData[carKind[name]].scale,
+            carData[carKind[name]].scale);
 
-            renderer2 = new THREE.WebGLRenderer({
-                antialias: true
-            });
-            renderer2.setClearColor(0xbfd1e5);
-            renderer2.setPixelRatio(window.devicePixelRatio);
-            renderer2.setSize(window.innerWidth, window.innerHeight / 2);
+        const wheel2 = new THREE.Object3D();
+        wheel2.add(wheel);
+        scene.add(wheel2);
+        return wheel2;
+    };
 
-            const ambientLight = new THREE.AmbientLight(0x404040);
-            scene.add(ambientLight);
+    const createChassisMesh = (name, w, l, h) => {
+        const mesh = new THREE.Mesh(bodyGeom[carKind[name]], bodyMat[carKind[name]]);
+        mesh.rotation.y = carData[carKind[name]].rotation;
+        mesh.scale.x = carData[carKind[name]].scale;
+        mesh.scale.y = carData[carKind[name]].scale;
+        mesh.scale.z = carData[carKind[name]].scale;
+        mesh.position.y = carData[carKind[name]].bodyOffsetHeight;
+        const root = new THREE.Object3D();
+        root.add(mesh);
+        scene.add(root);
+        return root;
+    };
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-            dirLight.position.set(10, 10, 5);
-            scene.add(dirLight);
+    const createVehicle = (name, kind, pos, quat) => {
+        console.log(`createVehicle kind=${kind}`);
+        // Vehicle contants
+        const carname = name;
+        const carkind = kind;
+        const chassisWidth = 1.8;
+        const chassisHeight = .6;
+        const chassisLength = 4;
+        const massVehicle = carData[kind].massVehicle;
 
-            materialDynamic = new THREE.MeshPhongMaterial({
-                color: 0xfca400
-            });
-            materialStatic = new THREE.MeshPhongMaterial({
-                color: 0x999999
-            });
-            materialInteractive = new THREE.MeshPhongMaterial({
-                color: 0x990000
-            });
+        const wheelAxisPositionBack = carData[kind].wheelAxisPositionBack;
+        const wheelRadiusBack = carData[kind].wheelRadiusBack;
+        const wheelWidthBack = carData[kind].wheelWidthBack;
+        const wheelHalfTrackBack = 1.1;
+        const wheelAxisHeightBack = 0.3;
 
-            container.innerHTML = "";
+        const wheelAxisFrontPosition = carData[kind].wheelAxisFrontPosition;
+        const wheelHalfTrackFront = 1;
+        const wheelAxisHeightFront = .3;
+        const wheelRadiusFront = .35;
+        const wheelWidthFront = carData[kind].wheelWidthFront;
 
-            container.appendChild(renderer.domElement);
-            container.appendChild(renderer2.domElement);
+        const friction = 1000;
+        const suspensionStiffness = 20.0;
+        const suspensionDamping = 2.3;
+        const suspensionCompression = 4.4;
+        const suspensionRestLength = 0.6;
+        const rollInfluence = 0.0;
 
-            stats = new Stats();
-            stats.domElement.style.position = 'absolute';
-            stats.domElement.style.top = '0px';
-            container.appendChild(stats.domElement);
+        const steeringIncrement = 0.04;
+        const steeringClamp = 0.5;
+        const maxEngineForce = 8000;
+        const maxBreakingForce = 200;
 
-            window.addEventListener('resize', onWindowResize, false);
-            window.addEventListener('keydown', keydown);
-            window.addEventListener('keyup', keyup);
-        };
+        // Chassis
+        const chassisMesh = createChassisMesh(name, chassisWidth, chassisHeight, chassisLength);
+        chassisMesh.rotation.y = Math.PI;
 
-        const onWindowResize = () => {
-            camera.aspect = window.innerWidth / (window.innerHeight / 2);
-            camera.updateProjectionMatrix();
+        // Raycast Vehicle
+        let engineForce = 0;
+        let vehicleSteering = 0;
+        let breakingForce = 0;
 
-            camera2.aspect = window.innerWidth / (window.innerHeight / 2);
-            camera2.updateProjectionMatrix();
+        // Wheels
+        const FRONT_LEFT = 0;
+        const FRONT_RIGHT = 1;
+        const BACK_LEFT = 2;
+        const BACK_RIGHT = 3;
+        const wheelMeshes = [];
 
-            renderer.setSize(window.innerWidth, (window.innerHeight / 2));
-            renderer2.setSize(window.innerWidth, (window.innerHeight / 2));
-        };
+        const addWheel = (name, isFront, pos, width, index) => {
+            wheelMeshes[index] = createWheelMesh(name, width, index);
+        }
 
-        const tick = () => {
-            requestAnimationFrame(tick);
-            const dt = clock.getDelta();
-            for (let syncItem of syncList) {
-                //syncItem(dt);
+        addWheel(name, true, wheelRadiusFront, wheelWidthFront, FRONT_LEFT);
+        addWheel(name, true, wheelRadiusFront, wheelWidthFront, FRONT_RIGHT);
+        addWheel(name, false, wheelRadiusBack, wheelWidthBack, BACK_LEFT);
+        addWheel(name, false, wheelRadiusBack, wheelWidthBack, BACK_RIGHT);
+
+        // Sync keybord actions and physics and graphics
+        const sync = (dt) => {
+            const speed = vehicle.getCurrentSpeedKmHour();
+            if (carname == gCarname) {
+                speedometer.innerHTML = (speed < 0 ? '(R) ' : '') + Math.abs(speed).toFixed(1) +
+                    ' km/h';
             }
-            //physicsWorld.stepSimulation(dt, 10);
-            //controls.update(dt);
-            renderer.render(scene, camera);
-            renderer2.render(scene, camera2);
-            time += dt;
-            stats.update();
-        };
+            breakingForce = 0;
+            engineForce = 0;
 
-        const keyup = (e) => {
-            if (keysActions[e.code]) {
-                actions[gCarname][keysActions[e.code]] = false;
-                //console.log(actions[gCarname])
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
+            if (actions[carname].acceleration) {
+                if (speed < -1)
+                    breakingForce = maxBreakingForce;
+                else engineForce = maxEngineForce;
             }
-        };
-
-        const keydown = (e) => {
-            //console.log("e.code", e.code);
-            if (keysActions[e.code]) {
-                actions[gCarname][keysActions[e.code]] = true;
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
+            if (actions[carname].braking) {
+                if (speed > 1)
+                    breakingForce = maxBreakingForce;
+                else engineForce = -maxEngineForce / 2;
             }
-        };
-
-        const createBox = (pos, quat, w, l, h, mass, friction) => {
-            const material = mass > 0 ? materialDynamic : materialStatic;
-            const shape = new THREE.BoxGeometry(w, l, h, 1, 1, 1);
-
-            const mesh = new THREE.Mesh(shape, material);
-            mesh.position.copy(pos);
-            mesh.quaternion.copy(quat);
-            scene.add(mesh);
-        };
-
-        const createWheelMesh = (name, width, index) => {
-            console.log(`createWheelMesh width = ${width}`)
-            const wheel = new THREE.Mesh(wGeom[carKind[name]], wMat[carKind[name]]);
-            if (index == 1 || index == 2) {
-                wheel.rotation.y = Math.PI;
-                wheel.position.x = wheel.position.x + width;
+            if (actions[carname].left) {
+                if (vehicleSteering < steeringClamp)
+                    vehicleSteering += steeringIncrement;
             } else {
-                wheel.position.x = wheel.position.x - width;
-            }
-
-            wheel.scale.set(carData[carKind[name]].scale,
-                carData[carKind[name]].scale,
-                carData[carKind[name]].scale);
-
-            const wheel2 = new THREE.Object3D();
-            wheel2.add(wheel);
-            scene.add(wheel2);
-            return wheel2;
-        };
-
-        const createChassisMesh = (name, w, l, h) => {
-            const mesh = new THREE.Mesh(bodyGeom[carKind[name]], bodyMat[carKind[name]]);
-            mesh.rotation.y = carData[carKind[name]].rotation;
-            mesh.scale.x = carData[carKind[name]].scale;
-            mesh.scale.y = carData[carKind[name]].scale;
-            mesh.scale.z = carData[carKind[name]].scale;
-            mesh.position.y = carData[carKind[name]].bodyOffsetHeight;
-            const root = new THREE.Object3D();
-            root.add(mesh);
-            scene.add(root);
-            return root;
-        };
-
-        const createVehicle = (name, kind, pos, quat) => {
-            console.log(`createVehicle kind=${kind}`);
-            // Vehicle contants
-            const carname = name;
-            const carkind = kind;
-            const chassisWidth = 1.8;
-            const chassisHeight = .6;
-            const chassisLength = 4;
-            const massVehicle = carData[kind].massVehicle;
-
-            const wheelAxisPositionBack = carData[kind].wheelAxisPositionBack;
-            const wheelRadiusBack = carData[kind].wheelRadiusBack;
-            const wheelWidthBack = carData[kind].wheelWidthBack;
-            const wheelHalfTrackBack = 1.1;
-            const wheelAxisHeightBack = 0.3;
-
-            const wheelAxisFrontPosition = carData[kind].wheelAxisFrontPosition;
-            const wheelHalfTrackFront = 1;
-            const wheelAxisHeightFront = .3;
-            const wheelRadiusFront = .35;
-            const wheelWidthFront = carData[kind].wheelWidthFront;
-
-            const friction = 1000;
-            const suspensionStiffness = 20.0;
-            const suspensionDamping = 2.3;
-            const suspensionCompression = 4.4;
-            const suspensionRestLength = 0.6;
-            const rollInfluence = 0.0;
-
-            const steeringIncrement = 0.04;
-            const steeringClamp = 0.5;
-            const maxEngineForce = 8000;
-            const maxBreakingForce = 200;
-
-            // Chassis
-            const chassisMesh = createChassisMesh(name, chassisWidth, chassisHeight, chassisLength);
-            chassisMesh.rotation.y = Math.PI;
-
-            // Raycast Vehicle
-            let engineForce = 0;
-            let vehicleSteering = 0;
-            let breakingForce = 0;
-            
-            // Wheels
-            const FRONT_LEFT = 0;
-            const FRONT_RIGHT = 1;
-            const BACK_LEFT = 2;
-            const BACK_RIGHT = 3;
-            const wheelMeshes = [];
-            
-            const addWheel = (name, isFront, pos, width, index) => {
-                wheelMeshes[index] = createWheelMesh(name, width, index);
-            }
-
-            addWheel(name, true, wheelRadiusFront, wheelWidthFront, FRONT_LEFT);
-            addWheel(name, true, wheelRadiusFront, wheelWidthFront, FRONT_RIGHT);
-            addWheel(name, false, wheelRadiusBack, wheelWidthBack, BACK_LEFT);
-            addWheel(name, false, wheelRadiusBack, wheelWidthBack, BACK_RIGHT);
-
-            // Sync keybord actions and physics and graphics
-            const sync = (dt) => {
-                const speed = vehicle.getCurrentSpeedKmHour();
-                if (carname == gCarname) {
-                    speedometer.innerHTML = (speed < 0 ? '(R) ' : '') + Math.abs(speed).toFixed(1) +
-                        ' km/h';
-                }
-                breakingForce = 0;
-                engineForce = 0;
-
-                if (actions[carname].acceleration) {
-                    if (speed < -1)
-                        breakingForce = maxBreakingForce;
-                    else engineForce = maxEngineForce;
-                }
-                if (actions[carname].braking) {
-                    if (speed > 1)
-                        breakingForce = maxBreakingForce;
-                    else engineForce = -maxEngineForce / 2;
-                }
-                if (actions[carname].left) {
-                    if (vehicleSteering < steeringClamp)
-                        vehicleSteering += steeringIncrement;
+                if (actions[carname].right) {
+                    if (vehicleSteering > -steeringClamp)
+                        vehicleSteering -= steeringIncrement;
                 } else {
-                    if (actions[carname].right) {
-                        if (vehicleSteering > -steeringClamp)
+                    if (vehicleSteering < -steeringIncrement)
+                        vehicleSteering += steeringIncrement;
+                    else {
+                        if (vehicleSteering > steeringIncrement)
                             vehicleSteering -= steeringIncrement;
-                    } else {
-                        if (vehicleSteering < -steeringIncrement)
-                            vehicleSteering += steeringIncrement;
                         else {
-                            if (vehicleSteering > steeringIncrement)
-                                vehicleSteering -= steeringIncrement;
-                            else {
-                                vehicleSteering = 0;
-                            }
+                            vehicleSteering = 0;
                         }
                     }
                 }
+            }
 
-                vehicle.applyEngineForce(engineForce, BACK_LEFT);
-                vehicle.applyEngineForce(engineForce, BACK_RIGHT);
+            vehicle.applyEngineForce(engineForce, BACK_LEFT);
+            vehicle.applyEngineForce(engineForce, BACK_RIGHT);
 
-                vehicle.setBrake(breakingForce / 2, FRONT_LEFT);
-                vehicle.setBrake(breakingForce / 2, FRONT_RIGHT);
-                vehicle.setBrake(breakingForce, BACK_LEFT);
-                vehicle.setBrake(breakingForce, BACK_RIGHT);
+            vehicle.setBrake(breakingForce / 2, FRONT_LEFT);
+            vehicle.setBrake(breakingForce / 2, FRONT_RIGHT);
+            vehicle.setBrake(breakingForce, BACK_LEFT);
+            vehicle.setBrake(breakingForce, BACK_RIGHT);
 
-                vehicle.setSteeringValue(vehicleSteering, FRONT_LEFT);
-                vehicle.setSteeringValue(vehicleSteering, FRONT_RIGHT);
+            vehicle.setSteeringValue(vehicleSteering, FRONT_LEFT);
+            vehicle.setSteeringValue(vehicleSteering, FRONT_RIGHT);
 
 
-                const n = vehicle.getNumWheels();
-                for (let i = 0; i < n; i++) {
-                    vehicle.updateWheelTransform(i, true);
-                    const tm = vehicle.getWheelTransformWS(i);
-                    const p = tm.getOrigin();
-                    const q = tm.getRotation();
-                    wheelMeshes[i].position.set(p.x(), p.y(), p.z());
-                    wheelMeshes[i].quaternion.set(q.x(), q.y(), q.z(), q.w());
-                }
-
-                const tm = vehicle.getChassisWorldTransform();
+            const n = vehicle.getNumWheels();
+            for (let i = 0; i < n; i++) {
+                vehicle.updateWheelTransform(i, true);
+                const tm = vehicle.getWheelTransformWS(i);
                 const p = tm.getOrigin();
                 const q = tm.getRotation();
-                chassisMesh.position.set(p.x(), p.y(), p.z());
-                chassisMesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
-                if (carname == gCarname) {
-                    // const campos = new THREE.Vector3(0, 1.4, -6);
-                    campos.set(0, 1.6, -5);
-                    const vec2 = chassisMesh.localToWorld(campos);
-                    //console.dir(campos);
-                    camera.position.set(vec2.x, vec2.y, vec2.z);
-                    camera.lookAt(chassisMesh.position);
-                }
-                if (carname == gCarname2) {
-                    campos.set(0, 1.6, -5);
-                    const vec2 = chassisMesh.localToWorld(campos);
-                    camera2.position.set(vec2.x, vec2.y, vec2.z);
-                    camera2.lookAt(chassisMesh.position);
-                }
-            };
-            syncList.push(sync);
-        };
-
-        const createGround = () => {
-            // Create the terrain body
-            heightData = generateHeight(terrainWidth, terrainDepth, terrainMinHeight, terrainMaxHeight);
-            const scaleX = terrainWidthExtents / (terrainWidth - 1);
-            const scaleZ = terrainDepthExtents / (terrainDepth - 1);
-            var geometry = new THREE.PlaneBufferGeometry(scaleX*terrainWidth, scaleZ*terrainDepth, terrainWidth - 1, terrainDepth - 1);
-            geometry.rotateX(-Math.PI / 2);
-            var vertices = geometry.attributes.position.array;
-            for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
-                // j + 1 because it is the y component that we modify
-                vertices[j + 1] = heightData[i];
+                wheelMeshes[i].position.set(p.x(), p.y(), p.z());
+                wheelMeshes[i].quaternion.set(q.x(), q.y(), q.z(), q.w());
             }
-            geometry.computeVertexNormals();
-            var groundMaterial = new THREE.MeshPhongMaterial({
-                color: 0xC7C7C7
-            });
-            const loader = new THREE.TextureLoader();
-            loader.load(
-                // resource URL
-                'images/sotomap3.png',
-                // Function when resource is loaded
-                (texture) => {
-                    // do something with the texture
-                    const planeMaterial = new THREE.MeshBasicMaterial({
-                        map: texture
-                    });
-                    terrainMesh = new THREE.Mesh(geometry, planeMaterial);
-                    scene.add(terrainMesh);
-                },
-                // Function called when download progresses
-                (xhr) => {
-                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-                },
-                // Function called when download errors
-                (xhr) => {
-                    console.log('An error happened');
-                }
-            );
-           
 
-//            const groundShape = createTerrainShape(heightData);
-            
-        };
-        const createObjects = () => {
-            //createBox(new THREE.Vector3(0, -0.5, 0), ZERO_QUATERNION, 750, 1, 750, 0, 2);
-            createGround();
-
-            const quaternion = new THREE.Quaternion(0, 0, 0, 1);
-            quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 5);
-            createBox(new THREE.Vector3(0, -1.5, 0), quaternion, 8, 4, 10, 0);
-
-            const size = 0.85;
-            const nw = 6;
-            const nh = 5;
-            for (let j = 0; j < nw; j++)
-                for (let i = 0; i < nh; i++)
-                    createBox(new THREE.Vector3(size * j - (size * (nw - 1)) / 2, size * i, 10),
-                        ZERO_QUATERNION, size, size, size, 10);
-
-            createVehicle("car1", "koenigsegg", new THREE.Vector3(0, 4, -2000), ZERO_QUATERNION);
-            createVehicle("car2", "koenigsegg", new THREE.Vector3(0, 4, -4000), ZERO_QUATERNION);
-            createVehicle("car3", "camaro", new THREE.Vector3(0, 8, 800), ZERO_QUATERNION);
-            createVehicle("car4", "zonda", new THREE.Vector3(0, 14, -1300), ZERO_QUATERNION);
-            createVehicle("car5", "laferrari", new THREE.Vector3(0, 14, -100), ZERO_QUATERNION);
-        };
-        const generateHeight = (width, depth, minHeight, maxHeight) => {
-            // Generates the height data (a sinus wave)
-            var size = width * depth;
-            var data = new Float32Array(size);
-            var hRange = maxHeight - minHeight;
-            var w2 = width / 2;
-            var d2 = depth / 2;
-            var phaseMult = 12;
-            var p = 0;
-            for (var j = 0; j < depth; j++) {
-                for (var i = 0; i < width; i++) {
-                    var radius = Math.sqrt(
-                        Math.pow((i - w2) / w2, 2.0) +
-                        Math.pow((j - d2) / d2, 2.0));
-                    var height = (Math.sin(radius * phaseMult) + 1) * 0.5 * hRange + minHeight;
-                    data[p] = height;
-                    p++;
-                }
+            const tm = vehicle.getChassisWorldTransform();
+            const p = tm.getOrigin();
+            const q = tm.getRotation();
+            chassisMesh.position.set(p.x(), p.y(), p.z());
+            chassisMesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
+            if (carname == gCarname) {
+                // const campos = new THREE.Vector3(0, 1.4, -6);
+                campos.set(0, 1.6, -5);
+                const vec2 = chassisMesh.localToWorld(campos);
+                //console.dir(campos);
+                camera.position.set(vec2.x, vec2.y, vec2.z);
+                camera.lookAt(chassisMesh.position);
             }
-            return data;
+            if (carname == gCarname2) {
+                campos.set(0, 1.6, -5);
+                const vec2 = chassisMesh.localToWorld(campos);
+                camera2.position.set(vec2.x, vec2.y, vec2.z);
+                camera2.lookAt(chassisMesh.position);
+            }
         };
-        
+        syncList.push(sync);
+    };
 
-        // - Init -
-        initGraphics();
-        //initPhysics();
-        createObjects();
-        tick();
-    
+    const createGround = () => {
+        // Create the terrain body
+        heightData = generateHeight(terrainWidth, terrainDepth, terrainMinHeight, terrainMaxHeight);
+        const scaleX = terrainWidthExtents / (terrainWidth - 1);
+        const scaleZ = terrainDepthExtents / (terrainDepth - 1);
+        var geometry = new THREE.PlaneBufferGeometry(scaleX * terrainWidth, scaleZ * terrainDepth, terrainWidth - 1, terrainDepth - 1);
+        geometry.rotateX(-Math.PI / 2);
+        var vertices = geometry.attributes.position.array;
+        for (var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3) {
+            // j + 1 because it is the y component that we modify
+            vertices[j + 1] = heightData[i];
+        }
+        geometry.computeVertexNormals();
+        var groundMaterial = new THREE.MeshPhongMaterial({
+            color: 0xC7C7C7
+        });
+        const loader = new THREE.TextureLoader();
+        loader.load(
+            // resource URL
+            'images/sotomap3.png',
+            // Function when resource is loaded
+            (texture) => {
+                // do something with the texture
+                const planeMaterial = new THREE.MeshBasicMaterial({
+                    map: texture
+                });
+                terrainMesh = new THREE.Mesh(geometry, planeMaterial);
+                scene.add(terrainMesh);
+            },
+            // Function called when download progresses
+            (xhr) => {
+                console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+            },
+            // Function called when download errors
+            (xhr) => {
+                console.log('An error happened');
+            }
+        );
+
+
+        //            const groundShape = createTerrainShape(heightData);
+
+    };
+    const createObjects = () => {
+        //createBox(new THREE.Vector3(0, -0.5, 0), ZERO_QUATERNION, 750, 1, 750, 0, 2);
+        createGround();
+
+        const quaternion = new THREE.Quaternion(0, 0, 0, 1);
+        quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 5);
+        createBox(new THREE.Vector3(0, -1.5, 0), quaternion, 8, 4, 10, 0);
+
+        const size = 0.85;
+        const nw = 6;
+        const nh = 5;
+        for (let j = 0; j < nw; j++)
+            for (let i = 0; i < nh; i++)
+                createBox(new THREE.Vector3(size * j - (size * (nw - 1)) / 2, size * i, 10),
+                    ZERO_QUATERNION, size, size, size, 10);
+
+        createVehicle("car1", "koenigsegg", new THREE.Vector3(0, 4, -2000), ZERO_QUATERNION);
+        createVehicle("car2", "koenigsegg", new THREE.Vector3(0, 4, -4000), ZERO_QUATERNION);
+        createVehicle("car3", "camaro", new THREE.Vector3(0, 8, 800), ZERO_QUATERNION);
+        createVehicle("car4", "zonda", new THREE.Vector3(0, 14, -1300), ZERO_QUATERNION);
+        createVehicle("car5", "laferrari", new THREE.Vector3(0, 14, -100), ZERO_QUATERNION);
+    };
+    const generateHeight = (width, depth, minHeight, maxHeight) => {
+        // Generates the height data (a sinus wave)
+        var size = width * depth;
+        var data = new Float32Array(size);
+        var hRange = maxHeight - minHeight;
+        var w2 = width / 2;
+        var d2 = depth / 2;
+        var phaseMult = 12;
+        var p = 0;
+        for (var j = 0; j < depth; j++) {
+            for (var i = 0; i < width; i++) {
+                var radius = Math.sqrt(
+                    Math.pow((i - w2) / w2, 2.0) +
+                    Math.pow((j - d2) / d2, 2.0));
+                var height = (Math.sin(radius * phaseMult) + 1) * 0.5 * hRange + minHeight;
+                data[p] = height;
+                p++;
+            }
+        }
+        return data;
+    };
+
+
+    // - Init -
+    initGraphics();
+    //initPhysics();
+    createObjects();
+    tick();
+
 };
 
 const socket = io();
+const myproc = () => {
+    socket.emit('getObjs', "");
+    setTimeout(myproc, 1000);
+};
+
+socket.on('objpos', (obj) => {
+    console.log(obj);
+});
+myproc();
 socket.on('car', (msg) => {
     //console.log(msg.car);
     const carname = msg.car;

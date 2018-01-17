@@ -33,78 +33,81 @@ const carlist = [
   "car5"
 ];
 for (let car of carlist) {
-    controls[car] = {};
-    controls[car].moveForward = false;
-    controls[car].moveBackward = false;
-    controls[car].moveLeft = false;
-    controls[car].moveRight = false;
+  controls[car] = {};
+  controls[car].moveForward = false;
+  controls[car].moveBackward = false;
+  controls[car].moveLeft = false;
+  controls[car].moveRight = false;
 }
 const carData = {
-    "fordgt90": {
-        "body_url": "obj/fordBody.json",
-        "wheel_url": "",
-        "engineForce": 600
-    },
-    "koenigsegg": {
-        "body_url": "obj/koenigsegg/koenigsegg_body.json",
-        "wheel_url": "",
-        "rotation": Math.PI,
-        "bodyOffsetHeight": 0,
-        "scale": 1.5,
-        "massVehicle": 1100,
-        "wheelAxisPositionBack": -1.7,
-        "wheelWidthBack": .0,
-        "wheelAxisFrontPosition": 1.5,
-        "wheelWidthFront": .0,
-        "wheelRadiusBack": .4,
+  "fordgt90": {
+    "body_url": "obj/fordBody.json",
+    "wheel_url": "",
+    "engineForce": 600
+  },
+  "koenigsegg": {
+    "body_url": "obj/koenigsegg/koenigsegg_body.json",
+    "wheel_url": "",
+    "rotation": Math.PI,
+    "bodyOffsetHeight": 0,
+    "scale": 1.5,
+    "massVehicle": 1100,
+    "wheelAxisPositionBack": -1.7,
+    "wheelWidthBack": .0,
+    "wheelAxisFrontPosition": 1.5,
+    "wheelWidthFront": .0,
+    "wheelRadiusBack": .4,
 
-        "engineForce": 600
-    },
-    "camaro": {
-        "body_url": "obj/camaro/camaro_body.json",
-        "wheel_url": "",
-        "rotation": 0,
-        "bodyOffsetHeight": 0.5,
-        "scale": 1.0,
-        "massVehicle": 1700,
-        "wheelAxisPositionBack": -1.7,
-        "wheelWidthBack": -0.1,
-        "wheelAxisFrontPosition": 1.9,
-        "wheelWidthFront": -0.1,
-        "wheelRadiusBack": 0.4,
-        "engineForce": 600
-    },
-    "zonda": {
-        "body_url": "obj/zonda/zonda_body.json",
-        "wheel_url": "",
-        "bodyOffsetHeight": 0.5,
-        "rotation": 0,
-        "scale": 1.0,
-        "massVehicle": 1200,
-        "wheelAxisPositionBack": -2.05,
-        "wheelWidthBack": 0.1,
-        "wheelAxisFrontPosition": 1.7,
-        "wheelWidthFront": 0.1,
-        "wheelRadiusBack": 0.4,
-        "engineForce": 600
-    },
-    "laferrari": {
-        "body_url": "obj/laferrari/laferrari_body.json",
-        "wheel_url": "",
-        "bodyOffsetHeight": 0,
-        "rotation": Math.PI,
-        "scale": 1.5,
-        "massVehicle": 1200,
-        "wheelAxisPositionBack": -2.05,
-        "wheelWidthBack": 0.1,
-        "wheelAxisFrontPosition": 1.7,
-        "wheelWidthFront": 0.1,
-        "wheelRadiusBack": 0.4,
-        "engineForce": 600
-    }
+    "engineForce": 600
+  },
+  "camaro": {
+    "body_url": "obj/camaro/camaro_body.json",
+    "wheel_url": "",
+    "rotation": 0,
+    "bodyOffsetHeight": 0.5,
+    "scale": 1.0,
+    "massVehicle": 1700,
+    "wheelAxisPositionBack": -1.7,
+    "wheelWidthBack": -0.1,
+    "wheelAxisFrontPosition": 1.9,
+    "wheelWidthFront": -0.1,
+    "wheelRadiusBack": 0.4,
+    "engineForce": 600
+  },
+  "zonda": {
+    "body_url": "obj/zonda/zonda_body.json",
+    "wheel_url": "",
+    "bodyOffsetHeight": 0.5,
+    "rotation": 0,
+    "scale": 1.0,
+    "massVehicle": 1200,
+    "wheelAxisPositionBack": -2.05,
+    "wheelWidthBack": 0.1,
+    "wheelAxisFrontPosition": 1.7,
+    "wheelWidthFront": 0.1,
+    "wheelRadiusBack": 0.4,
+    "engineForce": 600
+  },
+  "laferrari": {
+    "body_url": "obj/laferrari/laferrari_body.json",
+    "wheel_url": "",
+    "bodyOffsetHeight": 0,
+    "rotation": Math.PI,
+    "scale": 1.5,
+    "massVehicle": 1200,
+    "wheelAxisPositionBack": -2.05,
+    "wheelWidthBack": 0.1,
+    "wheelAxisFrontPosition": 1.7,
+    "wheelWidthFront": 0.1,
+    "wheelRadiusBack": 0.4,
+    "engineForce": 600
+  }
 };
 
+
 Ammo().then((Ammo) => {
+  const vehicles = [];
+
   let heightData = null;
   let ammoHeightData = null;
   const terrainHalfWidth = terrainWidth / 2;
@@ -113,7 +116,7 @@ Ammo().then((Ammo) => {
   const terrainMinHeight = -10;
   const terrainWidthExtents = 5000;
   const terrainDepthExtents = 5000;
-  
+
   // - Global variables -
   const DISABLE_DEACTIVATION = 4;
   const TRANSFORM_AUX = new Ammo.btTransform();
@@ -165,8 +168,7 @@ Ammo().then((Ammo) => {
 
   // - Functions -
 
-  const initGraphics = () => {
-  };
+  const initGraphics = () => {};
 
   const initPhysics = () => {
 
@@ -183,7 +185,7 @@ Ammo().then((Ammo) => {
   let saved_t = Date.now();
   const tick = () => {
     //requestAnimationFrame(tick);
-    setTimeout(tick,10);
+    setTimeout(tick, 10);
     //const dt = clock.getDelta();
     const now = Date.now();
     const dt = now - saved_t;
@@ -357,7 +359,7 @@ Ammo().then((Ammo) => {
     // Sync keybord actions and physics and graphics
     const sync = (dt) => {
       const speed = vehicle.getCurrentSpeedKmHour();
-      
+
       breakingForce = 0;
       engineForce = 0;
 
@@ -420,6 +422,7 @@ Ammo().then((Ammo) => {
       //chassisMesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
     };
     syncList.push(sync);
+    return vehicle;
   };
 
   const createGround = () => {
@@ -427,7 +430,7 @@ Ammo().then((Ammo) => {
     heightData = generateHeight(terrainWidth, terrainDepth, terrainMinHeight, terrainMaxHeight);
     const scaleX = terrainWidthExtents / (terrainWidth - 1);
     const scaleZ = terrainDepthExtents / (terrainDepth - 1);
-    
+
     const groundShape = createTerrainShape(heightData);
     const groundTransform = new Ammo.btTransform();
     groundTransform.setIdentity();
@@ -456,11 +459,12 @@ Ammo().then((Ammo) => {
         createBox(new Ammo.btVector3(size * j - (size * (nw - 1)) / 2, size * i, 10),
           ZERO_QUATERNION, size, size, size, 10);
 
-    createVehicle("car1", "koenigsegg", new Ammo.btVector3(0, 4, -2000), ZERO_QUATERNION);
-    createVehicle("car2", "koenigsegg", new Ammo.btVector3(0, 4, -4000), ZERO_QUATERNION);
-    createVehicle("car3", "camaro", new Ammo.btVector3(0, 8, 800), ZERO_QUATERNION);
-    createVehicle("car4", "zonda", new Ammo.btVector3(0, 14, -1300), ZERO_QUATERNION);
-    createVehicle("car5", "laferrari", new Ammo.btVector3(0, 14, -100), ZERO_QUATERNION);
+    vehicles.push(createVehicle("car1", "koenigsegg", new Ammo.btVector3(0, 4, -2000), ZERO_QUATERNION));
+    vehicles.push(createVehicle("car2", "koenigsegg", new Ammo.btVector3(0, 4, -4000), ZERO_QUATERNION));
+    vehicles.push(createVehicle("car3", "camaro", new Ammo.btVector3(0, 8, 800), ZERO_QUATERNION));
+    vehicles.push(createVehicle("car4", "zonda", new Ammo.btVector3(0, 14, -1300), ZERO_QUATERNION));
+    vehicles.push(createVehicle("car5", "laferrari", new Ammo.btVector3(0, 14, -100), ZERO_QUATERNION));
+    console.dir(vehicles);
   };
 
   const generateHeight = (width, depth, minHeight, maxHeight) => {
@@ -531,6 +535,59 @@ Ammo().then((Ammo) => {
   initGraphics();
   initPhysics();
   createObjects();
+
+  io.on('connection', (socket) => {
+    console.log('a user connected');
+    socket.on('getObjs', (msg) => {
+      (() => {
+        const obj = {};
+        obj.wheel = [];
+        obj.position = [];
+        obj.quaternion = [];
+        let idx = 0;
+        //console.log(`io on vehicles = ${vehicles}`);
+        for (const vehicle of vehicles) {
+          obj.idx = idx;
+  
+          const n = vehicle.getNumWheels();
+          const wheel = {};
+          wheel.position = [];
+          wheel.quaternion = [];
+          for (let i = 0; i < n; i++) {
+            const tm = vehicle.getWheelTransformWS(i);
+            const p = tm.getOrigin();
+            const q = tm.getRotation();
+            //console.log("p = ",p.x());
+            wheel.position[i] = [p.x(), p.y(), p.z()];
+            wheel.quaternion[i] = [q.x(), q.y(), q.z(), q.w()];
+          }
+          obj.wheel[idx] = wheel;
+          const tm = vehicle.getChassisWorldTransform();
+          const p = tm.getOrigin();
+          const q = tm.getRotation();
+          console.log("chassi p = ",p.x());
+          obj.position[idx] = [p.x(), p.y(), p.z()];
+          obj.quaternion[idx] = [q.x(), q.y(), q.z(), q.w()];
+          idx++;
+        }
+        io.emit('objpos', obj);
+      })();
+    });
+    socket.on('getPos', (data) => {
+      //console.dir(data);
+      const obj = {};
+      obj.name = data.name;
+      obj.x = px[data.name];
+      obj.y = py[data.name];
+      obj.z = pz[data.name];
+      io.emit('pos', obj);
+      if (data.name == 99) {
+        console.log(obj);
+      }
+      //console.log(obj);
+    });
+  });
+  
   tick();
 });
 
@@ -621,22 +678,6 @@ for (let i = 0; i < 100; i++) {
   pz[names[i]] = 0;
 }
 
-io.on('connection', (socket) => {
-  console.log('a user connected');
-  socket.on('getPos', (data) => {
-    //console.dir(data);
-    const obj = {};
-    obj.name = data.name;
-    obj.x = px[data.name];
-    obj.y = py[data.name];
-    obj.z = pz[data.name];
-    io.emit('pos', obj);
-    if (data.name == 99) {
-      console.log(obj);
-    }
-    //console.log(obj);
-  });
-});
 
 setInterval(() => {
   for (let name of names) {
