@@ -189,6 +189,7 @@ Ammo().then((Ammo) => {
     //const dt = clock.getDelta();
     const now = Date.now();
     const dt = now - saved_t;
+      console.log(`dt = ${dt}`);
     saved_t = now;
     for (let syncItem of syncList) {
       syncItem(dt);
@@ -301,7 +302,7 @@ Ammo().then((Ammo) => {
       chassisLength * 0.5));
     const transform = new Ammo.btTransform();
     transform.setIdentity();
-    transform.setOrigin(new Ammo.btVector3(pos.x, pos.y, pos.z));
+    transform.setOrigin(new Ammo.btVector3(pos[0], pos[1], pos[2]));
     transform.setRotation(new Ammo.btQuaternion(quat[0], quat[1], quat[2], quat[3]));
     const motionState = new Ammo.btDefaultMotionState(transform);
     const localInertia = new Ammo.btVector3(0, 0, 0);
@@ -418,6 +419,7 @@ Ammo().then((Ammo) => {
       const tm = vehicle.getChassisWorldTransform();
       const p = tm.getOrigin();
       const q = tm.getRotation();
+        console.log(p.x(),p.y(),p.z());
       //chassisMesh.position.set(p.x(), p.y(), p.z());
       //chassisMesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
     };
@@ -459,11 +461,11 @@ Ammo().then((Ammo) => {
         createBox(new Ammo.btVector3(size * j - (size * (nw - 1)) / 2, size * i, 10),
           ZERO_QUATERNION, size, size, size, 10);
 
-    vehicles.push(createVehicle("car1", "koenigsegg", new Ammo.btVector3(0, 4, -2000), ZERO_QUATERNION));
-    vehicles.push(createVehicle("car2", "koenigsegg", new Ammo.btVector3(0, 4, -4000), ZERO_QUATERNION));
-    vehicles.push(createVehicle("car3", "camaro", new Ammo.btVector3(0, 8, 800), ZERO_QUATERNION));
-    vehicles.push(createVehicle("car4", "zonda", new Ammo.btVector3(0, 14, -1300), ZERO_QUATERNION));
-    vehicles.push(createVehicle("car5", "laferrari", new Ammo.btVector3(0, 14, -100), ZERO_QUATERNION));
+    vehicles.push(createVehicle("car1", "koenigsegg", [0, 4, -2000], ZERO_QUATERNION));
+    vehicles.push(createVehicle("car2", "koenigsegg", [0, 4, -4000], ZERO_QUATERNION));
+    vehicles.push(createVehicle("car3", "camaro", [0, 8, 800], ZERO_QUATERNION));
+    vehicles.push(createVehicle("car4", "zonda", [0, 14, -1300], ZERO_QUATERNION));
+    vehicles.push(createVehicle("car5", "laferrari", [0, 14, -100], ZERO_QUATERNION));
     console.dir(vehicles);
   };
 
