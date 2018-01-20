@@ -84,11 +84,13 @@ const carData = {
         "engineForce": 600
     }
 };
-
+let camera;
 let bodyGeom = {};
 let bodyMat = {};
 let wMat = {};
 let wGeom = {};
+const carObj = [];
+
 const terrainWidth = 512;
 const terrainDepth = 512;
 
@@ -143,7 +145,6 @@ const carload = (name, callback) => {
 let gCarname2 = "car3";
 
 const ammain = () => {
-
     let heightData = null;
     let ammoHeightData = null;
     const terrainHalfWidth = terrainWidth / 2;
@@ -154,14 +155,13 @@ const ammain = () => {
     const terrainDepthExtents = 5000;
     // Detects webgl
 
-
     // - Global variables -
     const DISABLE_DEACTIVATION = 4;
     const ZERO_QUATERNION = new THREE.Quaternion(0, 0, 0, 1);
 
     // Graphics variables
     let container, stats, speedometer;
-    let camera, scene, renderer;
+    let scene, renderer;
     let camera2, renderer2;
     var terrainMesh, texture;
     const clock = new THREE.Clock();
@@ -204,7 +204,6 @@ const ammain = () => {
     const campos = new THREE.Vector3(0, 1.4, -6);
 
     // - Functions -
-
     const initGraphics = () => {
 
         container = document.getElementById('container');
@@ -274,14 +273,25 @@ const ammain = () => {
         renderer2.setSize(window.innerWidth, (window.innerHeight / 2));
     };
 
+    //onst campos = new THREE.Vector3(0, 1.4, -6);
+    const vec2 = new THREE.Vector3();
     const tick = () => {
         requestAnimationFrame(tick);
         const dt = clock.getDelta();
-        for (let syncItem of syncList) {
-            //syncItem(dt);
-        }
-        //physicsWorld.stepSimulation(dt, 10);
-        //controls.update(dt);
+
+        let idx=0;
+        for(const car of cars) {
+            if (car == gCarname) {
+            campos.set(0, 2, -6.5);
+            const q = carObj[idx].chassisMesh.getWorldQuaternion();
+            campos.applyQuaternion(q);
+            campos.add(carObj[idx].chassisMesh.position);
+            camera.position.copy(campos);
+            camera.lookAt(carObj[idx].chassisMesh.position);
+            //console.log(camera.position);
+            }
+            idx++;
+        }   
         renderer.render(scene, camera);
         renderer2.render(scene, camera2);
         time += dt;
@@ -292,6 +302,20 @@ const ammain = () => {
         if (keysActions[e.code]) {
             actions[gCarname][keysActions[e.code]] = false;
             //console.log(actions[gCarname])
+            if(keysActions[e.code]==="acceleration") {
+                gFmove = false;
+            }
+            if(keysActions[e.code]==="braking") {
+                gBmove = false;
+            }
+
+            if(keysActions[e.code]==="left") {
+                gLmove = false;
+            }
+            if(keysActions[e.code]==="right") {
+                gRmove = false;
+            }
+            release(gCarname);
             e.preventDefault();
             e.stopPropagation();
             return false;
@@ -301,7 +325,34 @@ const ammain = () => {
     const keydown = (e) => {
         //console.log("e.code", e.code);
         if (keysActions[e.code]) {
+            //console.log(gCarname,keysActions[e.code]);
             actions[gCarname][keysActions[e.code]] = true;
+        //     "KeyW": 'acceleration',
+        // "KeyS": 'braking',
+        // "KeyA": 'left',
+        // "KeyD": 'right'
+            gCarname = document.getElementById("carsel").value;
+            if(keysActions[e.code]==="acceleration") {
+                gFmove = true;
+                forwardMove(gCarname);
+            }
+            if(keysActions[e.code]==="braking") {
+                gBmove = true;
+
+                backwardMove(gCarname);
+            }
+
+            if(keysActions[e.code]==="left") {
+                gLmove = true;
+                
+                leftMove(gCarname);
+            }
+            if(keysActions[e.code]==="right") {
+                gRmove = true;
+                
+                rightMove(gCarname);
+            }
+
             e.preventDefault();
             e.stopPropagation();
             return false;
@@ -319,7 +370,7 @@ const ammain = () => {
     };
 
     const createWheelMesh = (name, width, index) => {
-        console.log(`createWheelMesh width = ${width}`)
+        //console.log(`createWheelMesh width = ${width}`)
         const wheel = new THREE.Mesh(wGeom[carKind[name]], wMat[carKind[name]]);
         if (index == 1 || index == 2) {
             wheel.rotation.y = Math.PI;
@@ -386,9 +437,11 @@ const ammain = () => {
         const maxBreakingForce = 200;
 
         // Chassis
+        const obj = {};
+        obj.wheel = [];
         const chassisMesh = createChassisMesh(name, chassisWidth, chassisHeight, chassisLength);
-        chassisMesh.rotation.y = Math.PI;
-
+        obj.chassisMesh = chassisMesh;
+        chassisMesh.rotation.y = Math.PI;;
         // Raycast Vehicle
         let engineForce = 0;
         let vehicleSteering = 0;
@@ -403,6 +456,7 @@ const ammain = () => {
 
         const addWheel = (name, isFront, pos, width, index) => {
             wheelMeshes[index] = createWheelMesh(name, width, index);
+            obj.wheel.push(wheelMeshes[index]);
         }
 
         addWheel(name, true, wheelRadiusFront, wheelWidthFront, FRONT_LEFT);
@@ -410,89 +464,7 @@ const ammain = () => {
         addWheel(name, false, wheelRadiusBack, wheelWidthBack, BACK_LEFT);
         addWheel(name, false, wheelRadiusBack, wheelWidthBack, BACK_RIGHT);
 
-        // Sync keybord actions and physics and graphics
-        const sync = (dt) => {
-            const speed = vehicle.getCurrentSpeedKmHour();
-            if (carname == gCarname) {
-                speedometer.innerHTML = (speed < 0 ? '(R) ' : '') + Math.abs(speed).toFixed(1) +
-                    ' km/h';
-            }
-            breakingForce = 0;
-            engineForce = 0;
-
-            if (actions[carname].acceleration) {
-                if (speed < -1)
-                    breakingForce = maxBreakingForce;
-                else engineForce = maxEngineForce;
-            }
-            if (actions[carname].braking) {
-                if (speed > 1)
-                    breakingForce = maxBreakingForce;
-                else engineForce = -maxEngineForce / 2;
-            }
-            if (actions[carname].left) {
-                if (vehicleSteering < steeringClamp)
-                    vehicleSteering += steeringIncrement;
-            } else {
-                if (actions[carname].right) {
-                    if (vehicleSteering > -steeringClamp)
-                        vehicleSteering -= steeringIncrement;
-                } else {
-                    if (vehicleSteering < -steeringIncrement)
-                        vehicleSteering += steeringIncrement;
-                    else {
-                        if (vehicleSteering > steeringIncrement)
-                            vehicleSteering -= steeringIncrement;
-                        else {
-                            vehicleSteering = 0;
-                        }
-                    }
-                }
-            }
-
-            vehicle.applyEngineForce(engineForce, BACK_LEFT);
-            vehicle.applyEngineForce(engineForce, BACK_RIGHT);
-
-            vehicle.setBrake(breakingForce / 2, FRONT_LEFT);
-            vehicle.setBrake(breakingForce / 2, FRONT_RIGHT);
-            vehicle.setBrake(breakingForce, BACK_LEFT);
-            vehicle.setBrake(breakingForce, BACK_RIGHT);
-
-            vehicle.setSteeringValue(vehicleSteering, FRONT_LEFT);
-            vehicle.setSteeringValue(vehicleSteering, FRONT_RIGHT);
-
-
-            const n = vehicle.getNumWheels();
-            for (let i = 0; i < n; i++) {
-                vehicle.updateWheelTransform(i, true);
-                const tm = vehicle.getWheelTransformWS(i);
-                const p = tm.getOrigin();
-                const q = tm.getRotation();
-                wheelMeshes[i].position.set(p.x(), p.y(), p.z());
-                wheelMeshes[i].quaternion.set(q.x(), q.y(), q.z(), q.w());
-            }
-
-            const tm = vehicle.getChassisWorldTransform();
-            const p = tm.getOrigin();
-            const q = tm.getRotation();
-            chassisMesh.position.set(p.x(), p.y(), p.z());
-            chassisMesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
-            if (carname == gCarname) {
-                // const campos = new THREE.Vector3(0, 1.4, -6);
-                campos.set(0, 1.6, -5);
-                const vec2 = chassisMesh.localToWorld(campos);
-                //console.dir(campos);
-                camera.position.set(vec2.x, vec2.y, vec2.z);
-                camera.lookAt(chassisMesh.position);
-            }
-            if (carname == gCarname2) {
-                campos.set(0, 1.6, -5);
-                const vec2 = chassisMesh.localToWorld(campos);
-                camera2.position.set(vec2.x, vec2.y, vec2.z);
-                camera2.lookAt(chassisMesh.position);
-            }
-        };
-        syncList.push(sync);
+        carObj.push(obj);
     };
 
     const createGround = () => {
@@ -533,10 +505,7 @@ const ammain = () => {
                 console.log('An error happened');
             }
         );
-
-
         //            const groundShape = createTerrainShape(heightData);
-
     };
     const createObjects = () => {
         //createBox(new THREE.Vector3(0, -0.5, 0), ZERO_QUATERNION, 750, 1, 750, 0, 2);
@@ -560,21 +529,22 @@ const ammain = () => {
         createVehicle("car4", "zonda", new THREE.Vector3(0, 14, -1300), ZERO_QUATERNION);
         createVehicle("car5", "laferrari", new THREE.Vector3(0, 14, -100), ZERO_QUATERNION);
     };
+
     const generateHeight = (width, depth, minHeight, maxHeight) => {
         // Generates the height data (a sinus wave)
-        var size = width * depth;
-        var data = new Float32Array(size);
-        var hRange = maxHeight - minHeight;
-        var w2 = width / 2;
-        var d2 = depth / 2;
-        var phaseMult = 12;
-        var p = 0;
-        for (var j = 0; j < depth; j++) {
-            for (var i = 0; i < width; i++) {
-                var radius = Math.sqrt(
+        const size = width * depth;
+        const data = new Float32Array(size);
+        const hRange = maxHeight - minHeight;
+        const w2 = width / 2;
+        const d2 = depth / 2;
+        const phaseMult = 12;
+        let p = 0;
+        for (let j = 0; j < depth; j++) {
+            for (let i = 0; i < width; i++) {
+                const radius = Math.sqrt(
                     Math.pow((i - w2) / w2, 2.0) +
                     Math.pow((j - d2) / d2, 2.0));
-                var height = (Math.sin(radius * phaseMult) + 1) * 0.5 * hRange + minHeight;
+                const height = (Math.sin(radius * phaseMult) + 1) * 0.5 * hRange + minHeight;
                 data[p] = height;
                 p++;
             }
@@ -582,57 +552,40 @@ const ammain = () => {
         return data;
     };
 
-
     // - Init -
     initGraphics();
-    //initPhysics();
     createObjects();
     tick();
-
 };
 
 const socket = io();
 const myproc = () => {
     socket.emit('getObjs', "");
-    setTimeout(myproc, 1000);
+    setTimeout(myproc, 30);
 };
 
 socket.on('objpos', (obj) => {
-    console.log(obj);
-});
-myproc();
-socket.on('car', (msg) => {
-    //console.log(msg.car);
-    const carname = msg.car;
-    gCarname2 = carname;
-    if (controls[carname]) {
-        //console.log(`controls ${carname}`);
-        actions[carname].braking = false;
-        actions[carname].acceleration = false;
-        actions[carname].right = false;
-        actions[carname].left = false;
-        if (msg.moveBackward) {
-            actions[carname].braking = true;
-        }
-        if (msg.moveForward) {
-            actions[carname].acceleration = true;
-        }
-        if (msg.moveRight) {
-            actions[carname].right = true;
-        }
-        if (msg.moveLeft) {
-            actions[carname].left = true;
-        }
-        if (msg.release) {
-            actions[carname].braking = false;
-            actions[carname].acceleration = false;
-            actions[carname].right = false;
-            actions[carname].left = false;
+    //console.log(obj);
 
+    for (let i = 0; i <= obj.idx; i++) {
+        const p = obj.position[i];
+        const q = obj.quaternion[i];
+        if (carObj[i]) {
+            carObj[i].chassisMesh.position.set(p[0], p[1], p[2]);
+            carObj[i].chassisMesh.quaternion.set(q[0], q[1], q[2], q[3]);
+            for (let n = 0; n < 4; n++) {
+                const wheel = carObj[i].wheel[n];
+                const p = obj.wheel[i].position[n];
+                const q = obj.wheel[i].quaternion[n];
+                wheel.position.set(p[0], p[1], p[2]);
+                wheel.quaternion.set(q[0], q[1], q[2], q[3]);
+            }
         }
-        //console.log(actions[carname]);
     }
 });
+
+myproc();
+
 socket.on('camera', (msg) => {
     console.log("camera", msg.car);
     const carname = msg.car;
@@ -649,5 +602,159 @@ const car3load = () => {
 };
 const car4load = () => {
     carload("laferrari", ammain);
+};
+
+let gRmove = false;
+let gLmove = false;
+let gFmove = false;
+let gBmove = false;
+
+const rightMove = (carname) => {
+    const msg = {
+        car: carname,
+        moveRight: "true"
+    };
+
+    if (gRmove) {
+        socket.emit('car', msg);
+        //setTimeout(rightMove, 10);
+    } else {
+        release(carname);
+    }
+};
+
+const forwardMove = (carname) => {
+    //console.log('forwardMove',carname);
+    const msg = {
+        car: carname,
+        moveForward: "true"
+    };
+
+    if (gFmove) {
+        socket.emit('car', msg);
+        //setTimeout(forwardMove, 10)
+    } else {
+        release(carname);
+    }
+};
+
+function backwardMove(carname) {
+    const msg = {
+        car: carname,
+        moveBackward: "true"
+    };
+
+    if (gBmove) {
+        socket.emit('car', msg);
+        //setTimeout(backwardMove, 10)
+    } else {
+        release(carname);
+    }
+};
+
+function leftMove(carname) {
+    const msg = {
+        car: carname,
+        moveLeft: "true"
+    };
+
+    if (gLmove) {
+        socket.emit('car', msg);
+        //setTimeout(leftMove, 10);
+    } else {
+        release(carname);
+    }
 }
+const release = (carname) => {
+    const msg = {
+        car: carname,
+        release: "true"
+    };
+
+    console.log('release',carname);
+    socket.emit('car', msg);
+};
+
+const resetBtn = document.getElementById("resetBtn");
+resetBtn.addEventListener('click',(e)=>{
+    socket.emit('carRest',"");
+},false);
+
+const rBtn = document.getElementById('right');
+rBtn.addEventListener('touchstart', () => {
+    const carname = document.getElementById("carsel").value;
+    gRmove = true;
+    rightMove(carname);
+})
+rBtn.addEventListener('touchend', () => {
+    gRmove = false;
+});
+const lBtn = document.getElementById('left');
+lBtn.addEventListener('touchstart', () => {
+    const carname = document.getElementById("carsel").value;
+    gLmove = true;
+    leftMove(carname);
+})
+lBtn.addEventListener('touchend', () => {
+    gLmove = false;
+});
+const fBtn = document.getElementById('forward');
+fBtn.addEventListener('touchstart', () => {
+    const carname = document.getElementById("carsel").value;
+    gFmove = true;
+    forwardMove(carname);
+})
+fBtn.addEventListener('touchend', () => {
+    gFmove = false;
+});
+const bBtn = document.getElementById('backward');
+bBtn.addEventListener('touchstart', () => {
+    const carname = document.getElementById("carsel").value;
+    gBmove = true;
+    backwardMove(carname);
+})
+bBtn.addEventListener('touchend', () => {
+    gBmove = false;
+});
+
+function forward() {
+    //console.log("forward");
+    const carname = document.getElementById("carsel").value;
+    const msg = {
+        car: carname,
+        moveForward: "true"
+    };
+    socket.emit('car', msg);
+}
+
+function backward() {
+    //console.log("backward");
+    const carname = document.getElementById("carsel").value;
+    const msg = {
+        car: carname,
+        moveBackward: "true"
+    };
+    socket.emit('car', msg);
+}
+
+function right() {
+    //console.log("right");
+    const carname = document.getElementById("carsel").value;
+    const msg = {
+        car: carname,
+        moveRight: "true"
+    };
+    socket.emit('car', msg);
+}
+
+function left() {
+    //console.log("left");
+    const carname = document.getElementById("carsel").value;
+    const msg = {
+        car: carname,
+        moveLeft: "true"
+    };
+    socket.emit('car', msg);
+}
+
 car1load(car2load);

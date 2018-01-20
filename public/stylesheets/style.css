@@ -1,6 +1,10 @@
 body {
   padding: 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  -webkit-touch-callout: none;
+  /* リンク長押しのポップアップを無効化 */
+  -webkit-user-select: none;
+  /* テキスト長押しの選択ボックスを無効化 */
 }
 
 a {

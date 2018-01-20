@@ -184,39 +184,17 @@ Ammo().then((Ammo) => {
 
   let saved_t = Date.now();
   const tick = () => {
-    //requestAnimationFrame(tick);
-    setTimeout(tick, 10);
-    //const dt = clock.getDelta();
+    setTimeout(tick, 30);
     const now = Date.now();
     const dt = now - saved_t;
-      console.log(`dt = ${dt}`);
+    //console.log(`dt = ${dt}`);
     saved_t = now;
     for (let syncItem of syncList) {
       syncItem(dt);
     }
-    physicsWorld.stepSimulation(dt, 10);
+    physicsWorld.stepSimulation(dt/1000, 50,1/60);
     //controls.update(dt);
     time += dt;
-  };
-
-  const keyup = (e) => {
-    if (keysActions[e.code]) {
-      actions[gCarname][keysActions[e.code]] = false;
-      //console.log(actions[gCarname])
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
-    }
-  };
-
-  const keydown = (e) => {
-    //console.log("e.code", e.code);
-    if (keysActions[e.code]) {
-      actions[gCarname][keysActions[e.code]] = true;
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
-    }
   };
 
   const createBox = (pos, quat, w, l, h, mass, friction) => {
@@ -284,16 +262,16 @@ Ammo().then((Ammo) => {
     const wheelRadiusFront = 0.35;
     const wheelWidthFront = carData[kind].wheelWidthFront;
 
-    const friction = 1000;
+    const friction = 100;
     const suspensionStiffness = 20.0;
     const suspensionDamping = 2.3;
     const suspensionCompression = 4.4;
     const suspensionRestLength = 0.6;
     const rollInfluence = 0.0;
 
-    const steeringIncrement = 0.04;
+    const steeringIncrement = 0.01;
     const steeringClamp = 0.5;
-    const maxEngineForce = 8000;
+    const maxEngineForce = 4000;
     const maxBreakingForce = 200;
 
     // Chassis
@@ -405,23 +383,10 @@ Ammo().then((Ammo) => {
       vehicle.setSteeringValue(vehicleSteering, FRONT_LEFT);
       vehicle.setSteeringValue(vehicleSteering, FRONT_RIGHT);
 
-
       const n = vehicle.getNumWheels();
       for (let i = 0; i < n; i++) {
         vehicle.updateWheelTransform(i, true);
-        const tm = vehicle.getWheelTransformWS(i);
-        const p = tm.getOrigin();
-        const q = tm.getRotation();
-        //wheelMeshes[i].position.set(p.x(), p.y(), p.z());
-        //wheelMeshes[i].quaternion.set(q.x(), q.y(), q.z(), q.w());
       }
-
-      const tm = vehicle.getChassisWorldTransform();
-      const p = tm.getOrigin();
-      const q = tm.getRotation();
-        console.log(p.x(),p.y(),p.z());
-      //chassisMesh.position.set(p.x(), p.y(), p.z());
-      //chassisMesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
     };
     syncList.push(sync);
     return vehicle;
@@ -550,7 +515,7 @@ Ammo().then((Ammo) => {
         //console.log(`io on vehicles = ${vehicles}`);
         for (const vehicle of vehicles) {
           obj.idx = idx;
-  
+
           const n = vehicle.getNumWheels();
           const wheel = {};
           wheel.position = [];
@@ -567,7 +532,7 @@ Ammo().then((Ammo) => {
           const tm = vehicle.getChassisWorldTransform();
           const p = tm.getOrigin();
           const q = tm.getRotation();
-          console.log("chassi p = ",p.x());
+          //console.log("chassi p = ",p.x());
           obj.position[idx] = [p.x(), p.y(), p.z()];
           obj.quaternion[idx] = [q.x(), q.y(), q.z(), q.w()];
           idx++;
@@ -575,6 +540,7 @@ Ammo().then((Ammo) => {
         io.emit('objpos', obj);
       })();
     });
+
     socket.on('getPos', (data) => {
       //console.dir(data);
       const obj = {};
@@ -584,12 +550,54 @@ Ammo().then((Ammo) => {
       obj.z = pz[data.name];
       io.emit('pos', obj);
       if (data.name == 99) {
-        console.log(obj);
+        //console.log(obj);
       }
       //console.log(obj);
     });
+    socket.on('carRest', (msg) => {
+      const transform = new Ammo.btTransform();
+      transform.setIdentity();
+      transform.setOrigin(new Ammo.btVector3(0, 0, 0));
+      transform.setRotation(new Ammo.btQuaternion(0, 0, 0, 1));
+      for (const vehicle of vehicles) {
+        //vehicle.setWorldTransform(transform);
+      }
+    });
+    socket.on('car', (msg) => {
+      //console.dir(msg);
+      const carname = msg.car;
+      gCarname2 = carname;
+      if (controls[carname]) {
+        //console.log(`controls ${carname}`);
+        actions[carname].braking = false;
+        actions[carname].acceleration = false;
+        actions[carname].right = false;
+        actions[carname].left = false;
+        if (msg.moveBackward) {
+          actions[carname].braking = true;
+        }
+        if (msg.moveForward) {
+          actions[carname].acceleration = true;
+        }
+        if (msg.moveRight) {
+          actions[carname].right = true;
+        }
+        if (msg.moveLeft) {
+          actions[carname].left = true;
+        }
+        if (msg.release) {
+          actions[carname].braking = false;
+          actions[carname].acceleration = false;
+          actions[carname].right = false;
+          actions[carname].left = false;
+
+        }
+        //console.log(actions[carname]);
+      }
+    });
+
   });
-  
+
   tick();
 });
 
@@ -667,30 +675,3 @@ const onListening = () => {
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
-
-const px = {},
-  py = {},
-  pz = {};
-const names = [];
-
-for (let i = 0; i < 100; i++) {
-  names[i] = i;
-  px[names[i]] = 0;
-  py[names[i]] = 0;
-  pz[names[i]] = 0;
-}
-
-
-setInterval(() => {
-  for (let name of names) {
-    px[name] += Math.random();
-    pz[name] = Math.random() * 5;
-    py[name] += 0.1 + Math.random();
-    if (py[name] > 100) {
-      py[name] = 0;
-    }
-    if (px[name] > 100) {
-      px[name] = -200;
-    }
-  }
-}, 10);

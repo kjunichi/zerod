@@ -1,13 +1,32 @@
 <html>
-<body>
-    <select id="carsel">
-        
-    </select>
+<head>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <link rel="stylesheet" href="stylesheets/style.css">
+</head>
+<body oncontextmenu="return false;">
     <div id="container"></div>
+    <div class="control">
+        <select id="carsel" name="selcar">
+            <option value="car1">koenigsegg</option>
+            <option value="car3">camaro</option>
+            <option value="car4" selected>car4</option>
+            <option value="car5">laferrari</option>
+        </select>
+    </div>
+    <div class="main">
+        <button id="left">ひだり</button>
+        <div class="fb">
+            <button id="forward">まえ</button>
+            <button id="backward">うしろ</button>
+        </div>
+        <button id="right">みぎ</button>
+    </div>
+<button id="resetBtn">reset</button>
     <script src="/socket.io/socket.io.js"></script>
     <script src="./javascripts/three.min.js"></script>
     <script src="./javascripts/stats.min.js"></script>
     <script src="./javascripts/client.js"></script>
-    
+
 </body>
+
 </html>
