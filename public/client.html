@@ -1,8 +1,23 @@
 <html>
+
 <head>
-        <meta name="viewport" content="width=device-width,initial-scale=1">
-        <link rel="stylesheet" href="stylesheets/style.css">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="stylesheets/style.css">
+    <style>
+        .main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fb {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
 </head>
+
 <body oncontextmenu="return false;">
     <div id="container"></div>
     <div class="control">
@@ -21,10 +36,11 @@
         </div>
         <button id="right">みぎ</button>
     </div>
-<button id="resetBtn">reset</button>
+    <button id="resetBtn">reset</button>
     <script src="/socket.io/socket.io.js"></script>
     <script src="./javascripts/three.min.js"></script>
     <script src="./javascripts/stats.min.js"></script>
+    <script src="./javascripts/BinaryLoader.js"></script>
     <script src="./javascripts/client.js"></script>
 
 </body>

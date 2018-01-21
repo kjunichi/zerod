@@ -82,6 +82,26 @@ const carData = {
         "wheelWidthFront": 0.1,
         "wheelRadiusBack": 0.4,
         "engineForce": 600
+    },
+    "veyron": {
+        name: "Bugatti Veyron",
+        url: "obj/veyron/veyron_body.json",
+        scale: 5.5,
+        direction: 0.0,
+        "bodyOffsetHeight": 0,
+        "rotation": Math.PI,
+        "massVehicle": 1200,
+        "wheelAxisPositionBack": -2.05,
+        "wheelWidthBack": 0.1,
+        "wheelAxisFrontPosition": 1.7,
+        "wheelWidthFront": 0.1,
+        "wheelRadiusBack": 0.4,
+        "engineForce": 600,
+        init_rotation: [0, 0, 0],
+		scale: 5.5,
+		init_material: 4,
+        body_materials: [2],
+        materials: null
     }
 };
 let camera;
@@ -250,7 +270,7 @@ const ammain = () => {
         container.innerHTML = "";
 
         container.appendChild(renderer.domElement);
-        container.appendChild(renderer2.domElement);
+        //container.appendChild(renderer2.domElement);
 
         stats = new Stats();
         stats.domElement.style.position = 'absolute';
@@ -279,21 +299,21 @@ const ammain = () => {
         requestAnimationFrame(tick);
         const dt = clock.getDelta();
 
-        let idx=0;
-        for(const car of cars) {
+        let idx = 0;
+        for (const car of cars) {
             if (car == gCarname) {
-            campos.set(0, 2, -6.5);
-            const q = carObj[idx].chassisMesh.getWorldQuaternion();
-            campos.applyQuaternion(q);
-            campos.add(carObj[idx].chassisMesh.position);
-            camera.position.copy(campos);
-            camera.lookAt(carObj[idx].chassisMesh.position);
-            //console.log(camera.position);
+                campos.set(0, 2, -6.5);
+                const q = carObj[idx].chassisMesh.getWorldQuaternion();
+                campos.applyQuaternion(q);
+                campos.add(carObj[idx].chassisMesh.position);
+                camera.position.copy(campos);
+                camera.lookAt(carObj[idx].chassisMesh.position);
+                //console.log(camera.position);
             }
             idx++;
-        }   
+        }
         renderer.render(scene, camera);
-        renderer2.render(scene, camera2);
+        //renderer2.render(scene, camera2);
         time += dt;
         stats.update();
     };
@@ -302,17 +322,17 @@ const ammain = () => {
         if (keysActions[e.code]) {
             actions[gCarname][keysActions[e.code]] = false;
             //console.log(actions[gCarname])
-            if(keysActions[e.code]==="acceleration") {
+            if (keysActions[e.code] === "acceleration") {
                 gFmove = false;
             }
-            if(keysActions[e.code]==="braking") {
+            if (keysActions[e.code] === "braking") {
                 gBmove = false;
             }
 
-            if(keysActions[e.code]==="left") {
+            if (keysActions[e.code] === "left") {
                 gLmove = false;
             }
-            if(keysActions[e.code]==="right") {
+            if (keysActions[e.code] === "right") {
                 gRmove = false;
             }
             release(gCarname);
@@ -327,29 +347,29 @@ const ammain = () => {
         if (keysActions[e.code]) {
             //console.log(gCarname,keysActions[e.code]);
             actions[gCarname][keysActions[e.code]] = true;
-        //     "KeyW": 'acceleration',
-        // "KeyS": 'braking',
-        // "KeyA": 'left',
-        // "KeyD": 'right'
+            //     "KeyW": 'acceleration',
+            // "KeyS": 'braking',
+            // "KeyA": 'left',
+            // "KeyD": 'right'
             gCarname = document.getElementById("carsel").value;
-            if(keysActions[e.code]==="acceleration") {
+            if (keysActions[e.code] === "acceleration") {
                 gFmove = true;
                 forwardMove(gCarname);
             }
-            if(keysActions[e.code]==="braking") {
+            if (keysActions[e.code] === "braking") {
                 gBmove = true;
 
                 backwardMove(gCarname);
             }
 
-            if(keysActions[e.code]==="left") {
+            if (keysActions[e.code] === "left") {
                 gLmove = true;
-                
+
                 leftMove(gCarname);
             }
-            if(keysActions[e.code]==="right") {
+            if (keysActions[e.code] === "right") {
                 gRmove = true;
-                
+
                 rightMove(gCarname);
             }
 
@@ -604,6 +624,10 @@ const car4load = () => {
     carload("laferrari", ammain);
 };
 
+const car5load = () => {
+    carloadBin("veyron", ammain);
+};
+
 let gRmove = false;
 let gLmove = false;
 let gFmove = false;
@@ -617,7 +641,9 @@ const rightMove = (carname) => {
 
     if (gRmove) {
         socket.emit('car', msg);
-        //setTimeout(rightMove, 10);
+        setTimeout(() => {
+            rightMove(carname);
+        }, 10);
     } else {
         release(carname);
     }
@@ -632,7 +658,9 @@ const forwardMove = (carname) => {
 
     if (gFmove) {
         socket.emit('car', msg);
-        //setTimeout(forwardMove, 10)
+        setTimeout(() => {
+            forwardMove(carname);
+        }, 10)
     } else {
         release(carname);
     }
@@ -646,7 +674,9 @@ function backwardMove(carname) {
 
     if (gBmove) {
         socket.emit('car', msg);
-        //setTimeout(backwardMove, 10)
+        setTimeout(() => {
+            backwardMove(carname);
+        }, 10)
     } else {
         release(carname);
     }
@@ -660,7 +690,9 @@ function leftMove(carname) {
 
     if (gLmove) {
         socket.emit('car', msg);
-        //setTimeout(leftMove, 10);
+        setTimeout(() => {
+            leftMove(carname);
+        }, 10);
     } else {
         release(carname);
     }
@@ -671,14 +703,14 @@ const release = (carname) => {
         release: "true"
     };
 
-    console.log('release',carname);
+    console.log('release', carname);
     socket.emit('car', msg);
 };
 
 const resetBtn = document.getElementById("resetBtn");
-resetBtn.addEventListener('click',(e)=>{
-    socket.emit('carRest',"");
-},false);
+resetBtn.addEventListener('click', (e) => {
+    socket.emit('carRest', "");
+}, false);
 
 const rBtn = document.getElementById('right');
 rBtn.addEventListener('touchstart', () => {
