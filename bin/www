@@ -133,10 +133,10 @@ Ammo().then((Ammo) => {
 
   // Physics variables
   let collisionConfiguration;
-  var dispatcher;
-  var broadphase;
-  var solver;
-  var physicsWorld;
+  let dispatcher;
+  let broadphase;
+  let solver;
+  let physicsWorld;
 
   const syncList = [];
   let time = 0;
@@ -559,13 +559,13 @@ Ammo().then((Ammo) => {
       //console.log(obj);
     });
     socket.on('carRest', (msg) => {
-      const transform = new Ammo.btTransform();
-      transform.setIdentity();
-      transform.setOrigin(new Ammo.btVector3(0, 0, 0));
-      transform.setRotation(new Ammo.btQuaternion(0, 0, 0, 1));
       for (const vehicle of vehicles) {
         //vehicle.setWorldTransform(transform);
+        physicsWorld.removeAction(vehicle);
       }
+      vehicles.splice(0, vehicles.length);
+
+      addCars();
     });
     socket.on('car', (msg) => {
       //console.dir(msg);
