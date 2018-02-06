@@ -9,7 +9,8 @@ const carlist = [
     "car2",
     "car3",
     "car4",
-    "car5"
+    "car5",
+    "car6"
 ];
 const controls = {};
 const actions = {};
@@ -85,7 +86,7 @@ const carData = {
     },
     "veyron": {
         name: "Bugatti Veyron",
-        url: "obj/veyron/veyron_body.json",
+        "body_url": "obj/veyron/veyron_body.json",
         scale: 5.5,
         direction: 0.0,
         "bodyOffsetHeight": 0,
@@ -102,7 +103,21 @@ const carData = {
 		init_material: 4,
         body_materials: [2],
         materials: null
-    }
+    },
+    "veneno": {
+        "body_url": "obj/veneno/veneno_body.json",
+        "wheel_url": "",
+        "bodyOffsetHeight": 0,
+        "rotation": 0,
+        "scale": 0.9,
+        "massVehicle": 1200,
+        "wheelAxisPositionBack": -1.0,
+        "wheelWidthBack": 0.1,
+        "wheelAxisFrontPosition": -1.7,
+        "wheelWidthFront": 0.1,
+        "wheelRadiusBack": 0.4,
+        "engineForce": 600
+      }
 };
 let camera;
 let bodyGeom = {};
@@ -214,9 +229,10 @@ const ammain = () => {
         "car2": "koenigsegg",
         "car3": "camaro",
         "car4": "zonda",
-        "car5": "laferrari"
+        "car5": "laferrari",
+        "car6": "veneno"
     };
-    const cars = ["car1", "car2", "car3", "car4", "car5"];
+    const cars = ["car1", "car2", "car3", "car4", "car5","car6"];
     for (let car of cars) {
         actions[car] = {};
     }
@@ -548,6 +564,7 @@ const ammain = () => {
         createVehicle("car3", "camaro", new THREE.Vector3(0, 8, 800), ZERO_QUATERNION);
         createVehicle("car4", "zonda", new THREE.Vector3(0, 14, -1300), ZERO_QUATERNION);
         createVehicle("car5", "laferrari", new THREE.Vector3(0, 14, -100), ZERO_QUATERNION);
+        createVehicle("car6", "veneno", new THREE.Vector3(0, 14, 0), ZERO_QUATERNION);
     };
 
     const generateHeight = (width, depth, minHeight, maxHeight) => {
@@ -621,11 +638,15 @@ const car3load = () => {
     carload("zonda", car4load);
 };
 const car4load = () => {
-    carload("laferrari", ammain);
+    carload("laferrari", car6load);
 };
 
 const car5load = () => {
     carloadBin("veyron", ammain);
+};
+
+const car6load = () => {
+    carload("veneno", ammain);
 };
 
 let gRmove = false;
@@ -709,6 +730,7 @@ const release = (carname) => {
 
 const resetBtn = document.getElementById("resetBtn");
 resetBtn.addEventListener('click', (e) => {
+    console.log('reset btn clicked!');
     socket.emit('carRest', "");
 }, false);
 

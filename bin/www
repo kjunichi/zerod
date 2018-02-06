@@ -102,6 +102,20 @@ const carData = {
     "wheelWidthFront": 0.1,
     "wheelRadiusBack": 0.4,
     "engineForce": 600
+  },
+  "veneno": {
+    "body_url": "obj/veneno/veneno_body.json",
+    "wheel_url": "",
+    "bodyOffsetHeight": 0,
+    "rotation": Math.PI,
+    "scale": 1.5,
+    "massVehicle": 1200,
+    "wheelAxisPositionBack": -2.15,
+    "wheelWidthBack": 0.1,
+    "wheelAxisFrontPosition": 2.3,
+    "wheelWidthFront": 0.1,
+    "wheelRadiusBack": 0.4,
+    "engineForce": 600
   }
 };
 
@@ -158,9 +172,10 @@ Ammo().then((Ammo) => {
     "car2": "koenigsegg",
     "car3": "camaro",
     "car4": "zonda",
-    "car5": "laferrari"
+    "car5": "laferrari",
+    "car6": "veneno"
   };
-  const cars = ["car1", "car2", "car3", "car4", "car5"];
+  const cars = ["car1", "car2", "car3", "car4", "car5","car6"];
   for (let car of cars) {
     actions[car] = {};
   }
@@ -231,10 +246,8 @@ Ammo().then((Ammo) => {
         const ms = body.getMotionState();
         if (ms) {
           ms.getWorldTransform(TRANSFORM_AUX);
-          const p = TRANSFORM_AUX.getOrigin();
-          const q = TRANSFORM_AUX.getRotation();
-          //mesh.position.set(p.x(), p.y(), p.z());
-          //mesh.quaternion.set(q.x(), q.y(), q.z(), q.w());
+//          const p = TRANSFORM_AUX.getOrigin();
+//         const q = TRANSFORM_AUX.getRotation();
         }
       };
       syncList.push(sync);
@@ -416,6 +429,7 @@ Ammo().then((Ammo) => {
     vehicles.push(createVehicle("car3", "camaro", [0, 8, 800], ZERO_QUATERNION));
     vehicles.push(createVehicle("car4", "zonda", [0, 14, -1300], ZERO_QUATERNION));
     vehicles.push(createVehicle("car5", "laferrari", [0, 14, -100], ZERO_QUATERNION));
+    vehicles.push(createVehicle("car6", "veneno", [0, 14, 0], ZERO_QUATERNION));
   };
 
   const createObjects = () => {
