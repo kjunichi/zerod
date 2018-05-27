@@ -15,5 +15,5 @@ open http://localhost:3003/
 if you are using Windows.
 
 ```bash
-start http://localhost:3003/
+start http://localhost:3003/client.html
 ```
